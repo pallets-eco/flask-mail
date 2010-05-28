@@ -1,0 +1,32 @@
+Metadata-Version: 1.0
+Name: flask-mail
+Version: 0.1
+Summary: <enter short description here>
+Home-page: <enter URL here>
+Author: danjac
+Author-email: your-email-here@example.com
+License: BSD
+Description: 
+        flask-mail
+        ----------
+        
+        Description goes here...
+        
+        Links
+        `````
+        
+        * `documentation <http://packages.python.org/flask-mail>`_
+        * `development version
+          <http://bitbucket.org/USERNAME/REPOSITORY/get/tip.gz#egg=flask-mail-dev`_
+        
+        
+        
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Software Development :: Libraries :: Python Modules

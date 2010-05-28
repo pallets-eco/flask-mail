@@ -1,0 +1,33 @@
+Flask-mail provides simple integration with TurboMail.
+
+Full TurboMail docs here:
+
+Sample usage:
+
+from flask import Flask
+from flaskext.mail import init_mail, Message
+
+app = Flask(__name__)
+init_mail(app)
+
+@app.route("/")
+def index():
+    msg = Message(subject="hello",
+                  sender="me@here.com",
+                  recipients=["you@there.com"])
+
+    msg.plain = "hello"
+    msg.send()
+
+Configuration
+
+There are 2 ways to configure this extension:
+
+1. By providing a "mail.cfg" file. You can override the filename
+using the MAIL_CONFIG_FILENAME in your Flask configuration.
+
+2. Passing a dict of settings as second argument to init_mail.
+
+
+
+

@@ -1,0 +1,11 @@
+README
+setup.py
+flask_mail.egg-info/PKG-INFO
+flask_mail.egg-info/SOURCES.txt
+flask_mail.egg-info/dependency_links.txt
+flask_mail.egg-info/namespace_packages.txt
+flask_mail.egg-info/not-zip-safe
+flask_mail.egg-info/requires.txt
+flask_mail.egg-info/top_level.txt
+flaskext/__init__.py
+flaskext/mail.py
