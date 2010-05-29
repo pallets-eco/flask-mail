@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import current_app, LocalProxy
+from flask import current_app
 
 from lamson.server import Relay
 from lamson.mail import MailResponse
@@ -69,7 +69,7 @@ class Message(object):
             sender = current_app.config.get("DEFAULT_MAIL_SENDER")
 
         if sender is None:
-            raise ValueError, "oops"
+            raise ValueError, "sender not provided nor is DEFAULT_MAIL_SENDER set"
 
         self.subject = subject
         self.sender = sender
