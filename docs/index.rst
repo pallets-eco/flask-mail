@@ -6,6 +6,8 @@
 Welcome to flask-mail's documentation!
 ======================================
 
+One of the most basic functions in a web application is the ability to send
+emails to your users.
 Contents:
 
 .. toctree::
