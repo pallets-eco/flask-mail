@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import current_app
+from flask import current_app, g
 
 from lamson.server import Relay
 from lamson.mail import MailResponse
@@ -27,6 +27,7 @@ def init_mail(app):
     MAIL_DEBUG : default app.debug
     MAIL_USERNAME : default None
     MAIL_PASSWORD : default None
+    MAIL_TEST_ENV : default False
     DEFAULT_MAIL_SENDER : default None
     
     The relay object is appended to the application instance
@@ -39,9 +40,22 @@ def init_mail(app):
     @app.route("/")
     def index():
         
-        msg = Message
-        relay.deliver(subject="hello", body="hello world",
+        msg = Message(subject="hello", body="hello world",
                       recipients=["me@mysite.com"])
+
+        msg.send()
+
+    If DEFAULT_MAIL_SENDER is set this will be used for 
+    the sender address if no sender set.
+
+    If you set MAIL_TEST_ENV to True:
+
+    1) no emails are actually sent
+    2) messages are added to a list in the g object, "outbox"
+
+    This is useful for unit tests where you do not want
+    to actually access a mail server, but you still want to
+    track emails sent under test conditions.
     """
     
     server = app.config.get('MAIL_SERVER', '127.0.0.1')
@@ -63,13 +77,14 @@ def init_mail(app):
 
 class Message(object):
 
-    def __init__(self, subject, recipients, body=None, html=None, sender=None):
+    def __init__(self, subject, 
+                 recipients=[], 
+                 body=None, 
+                 html=None, 
+                 sender=None):
         
         if sender is None:
             sender = current_app.config.get("DEFAULT_MAIL_SENDER")
-
-        if sender is None:
-            raise ValueError, "sender not provided nor is DEFAULT_MAIL_SENDER set"
 
         self.subject = subject
         self.sender = sender
@@ -77,8 +92,9 @@ class Message(object):
         self.html = html
 
         if isinstance(recipients, basestring):
-            self.recipients = [recipients]
-
+            recipients = [recipients]
+        self.recipients = recipients
+        
         self.attachments = []
 
     def get_response(self):
@@ -99,6 +115,17 @@ class Message(object):
         return response
 
     def send(self, relay=None):
+        
+        assert self.recipients, "No recipients have been added"
+        assert self.body or self.html, "No body or HTML has been set"
+        assert self.sender, "No sender address has been set"
+
+        if current_app.config.get("MAIL_TEST_ENV", False):
+            
+            outbox = getattr(g, 'outbox', [])
+            outbox.append(self)
+            g.outbox = outbox
+            return
 
         if relay is None:
 
@@ -116,5 +143,8 @@ class Message(object):
                data=None,
                disposition=None):
 
-        self.attachments.append((filename, content_type, data, disposition))
+        self.attachments.append((filename, 
+                                 content_type, 
+                                 data, 
+                                 disposition))
 
