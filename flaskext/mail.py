@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
     flaskext.mail
     ~~~~~~~~~~~~~
@@ -40,7 +41,8 @@ def init_mail(app):
     @app.route("/")
     def index():
         
-        msg = Message(subject="hello", body="hello world",
+        msg = Message(subject="hello", 
+                      body="hello world",
                       recipients=["me@mysite.com"])
 
         msg.send()
@@ -91,8 +93,6 @@ class Message(object):
         self.body = body
         self.html = html
 
-        if isinstance(recipients, basestring):
-            recipients = [recipients]
         self.recipients = recipients
         
         self.attachments = []
