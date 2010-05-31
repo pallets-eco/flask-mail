@@ -9,7 +9,7 @@ Links
 
 * `documentation <http://packages.python.org/flask-mail>`_
 * `development version
-  <http://bitbucket.org/USERNAME/REPOSITORY/get/tip.gz#egg=flask-mail-dev`_
+  <http://bitbucket.org/danjac/flask-mail/get/tip.gz#egg=flask-mail-dev`_
 
 
 """
@@ -19,11 +19,11 @@ from setuptools import setup
 setup(
     name='flask-mail',
     version='0.1',
-    url='<enter URL here>',
+    url='http://bitbucket.org/danjac/flask-mail',
     license='BSD',
-    author='danjac',
-    author_email='your-email-here@example.com',
-    description='<enter short description here>',
+    author='Dan Jacob',
+    author_email='danjac354@gmail.com',
+    description='Flask extension for sending email',
     long_description=__doc__,
     packages=['flaskext'],
     namespace_packages=['flaskext'],

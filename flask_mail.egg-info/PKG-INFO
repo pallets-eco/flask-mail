@@ -1,10 +1,10 @@
 Metadata-Version: 1.0
 Name: flask-mail
 Version: 0.1
-Summary: <enter short description here>
-Home-page: <enter URL here>
-Author: danjac
-Author-email: your-email-here@example.com
+Summary: Flask extension for sending email
+Home-page: http://bitbucket.org/danjac/flask-mail
+Author: Dan Jacob
+Author-email: danjac354@gmail.com
 License: BSD
 Description: 
         flask-mail
@@ -17,7 +17,7 @@ Description:
         
         * `documentation <http://packages.python.org/flask-mail>`_
         * `development version
-          <http://bitbucket.org/USERNAME/REPOSITORY/get/tip.gz#egg=flask-mail-dev`_
+          <http://bitbucket.org/danjac/flask-mail/get/tip.gz#egg=flask-mail-dev`_
         
         
         

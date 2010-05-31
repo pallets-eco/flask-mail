@@ -6,7 +6,7 @@ flask-mail
 One of the most basic functions in a web application is the ability to send
 emails to your users.
 
-The flask-mail extension provides a simple interface to set up SMTP with your
+The **flask-mail** extension provides a simple interface to set up SMTP with your
 `Flask`_ application and to send messages from views.
 
 This extension requires the `Lamson email library <http://lamsonproject.org>`_.
@@ -15,6 +15,10 @@ Source code and issue tracking at `Bitbucket`_.
 
 Installing flask-mail
 ---------------------
+
+Install with **pip** and **easy_install**::
+
+    pip install flask-mail
 
 Download the latest version from Bitbucket::
 
