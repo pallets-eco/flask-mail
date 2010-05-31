@@ -1,17 +1,18 @@
-flask-mail
-======================================
+.. flask-mail documentation master file, created by
+   sphinx-quickstart on Fri May 28 11:39:14 2010.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
 
-.. module:: flask-mail
+Welcome to flask-mail's documentation!
+======================================
 
 One of the most basic functions in a web application is the ability to send
 emails to your users.
 
 The flask-mail extension provides a simple interface to set up SMTP with your
-`Flask`_ application and to send messages from views.
+application and to send messages from views.
 
 This extension requires the `Lamson email library <http://lamsonproject.org>`_.
-
-Source code and issue tracking at `Bitbucket`_.
 
 Installing flask-mail
 ---------------------
@@ -124,14 +125,7 @@ See the API for details.
 Logging
 -------
 
-Lamson has its own logging, which you should be able to access using ``getLogger``::
-
-    from logging import getLogger
-    loggers = [app.logger, getLogger('lamson')]
-    for logger in loggers:
-        logger.addHandler(mailHandler)
-
-See `here <http://flask.pocoo.org/docs/errorhandling/>`_ for more details on Flask logging.
+TBD
 
 Unit tests
 ----------
@@ -220,5 +214,3 @@ API
     
     :param relay: Lamson ``Relay`` instance, uses ``app.mail_relay`` by default.
 
-.. _Flask: http://flask.pocoo.org
-.. _Bitbucket: http://bitbucket.org/danjac/flask-mail
