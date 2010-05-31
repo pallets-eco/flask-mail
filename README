@@ -1,27 +1,4 @@
 Flask-mail provides simple integration using Lamson.
 
-Full Lamson docs here:
-
-http://lamsonproject.org/
-
-Sample usage:
-
-from flask import Flask
-from flaskext.mail import init_mail, relay, MailResponse
-
-app = Flask(__name__)
-init_mail(app)
-
-@app.route("/")
-def index():
-    msg = MailResponse(Subject="hello",
-                       From="me@here.com",
-                       To=["you@there.com"])
-
-    msg.Body = "hello"
-    msg.Html = "<b>hello</b>"
-    relay.deliver(msg)
-
-
-
+See Sphinx docs for full documentation.
 
