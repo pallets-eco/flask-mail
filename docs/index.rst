@@ -121,18 +121,6 @@ Adding attachments is straightforward::
 
 See the API for details.
 
-Logging
--------
-
-Lamson has its own logging, which you should be able to access using ``getLogger``::
-
-    from logging import getLogger
-    loggers = [app.logger, getLogger('lamson')]
-    for logger in loggers:
-        logger.addHandler(mailHandler)
-
-See `here <http://flask.pocoo.org/docs/errorhandling/>`_ for more details on Flask logging.
-
 Unit tests
 ----------
 
@@ -183,6 +171,8 @@ API
 
     * ``DEFAULT_MAIL_SENDER`` : default ``None``
 
+    The ``smtplib`` `debug level <http://docs.python.org/library/smtplib.html#smtplib.SMTP.set_debuglevel>`_ will be set to the value of ``MAIL_DEBUG``.  
+    
     :param app: Flask application instance
 
 .. class:: Message
