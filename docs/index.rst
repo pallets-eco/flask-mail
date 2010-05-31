@@ -31,9 +31,7 @@ in the same virtualenv as your Flask application(s).
 Configuring flask-mail
 ----------------------
 
-Flask-mail is configured through the standard Flask configuration options.
-
-The following are the various configuration settings you need to know:
+Flask-mail is configured through the standard Flask configuration options:
 
 * ``MAIL_SERVER`` : default ``'localhost'``
 
@@ -86,7 +84,7 @@ To send a message first create a ``Message`` instance::
                       sender="from@example.com",
                       recipients=["to@example.com"])
        
-You can set the recipients immediately, or individually::
+You can set the recipient emails immediately, or individually::
 
     msg.recipients = ["you@example.com"]
     msg.add_recipient("somebodyelse@example.com")
@@ -117,14 +115,12 @@ use another mail server for newsletters)::
 Attachments
 -----------
 
-It's simple to add attachments::
-
-    msg.attach(filename, content_type, data)
-
-For example::
+Adding attachments is straightforward::
 
     with app.open_resource("image.png") as fp:
         msg.attach("image.png", "image/png", fp.read())
+
+See the API for details.
 
 Logging
 -------
@@ -152,15 +148,69 @@ thread local ``g`` object, so you can then inspect what emails are sent
 
     assert g.outbox[0].subject == "testing"
 
-Contents:
+API
+---
 
-.. toctree::
-   :maxdepth: 2
+.. module:: flaskext.mail
 
-Indices and tables
-==================
+.. function:: init_mail(app)
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    Initializes the mail extension. Attaches a Lamson ``Relay`` instance to the Flask application as ``mail_relay``.
+
+    Uses the following Flask configuration values:
+
+    * ``MAIL_SERVER`` : default ``'localhost'``
+
+    * ``MAIL_PORT`` : default ``25``
+
+    * ``MAIL_USE_TLS`` : default ``False``
+
+    * ``MAIL_USE_SSL`` : default ``False``
+
+    * ``MAIL_DEBUG`` : default ``app.debug``
+
+    * ``MAIL_USERNAME`` : default ``None``
+
+    * ``MAIL_PASSWORD`` : default ``None``
+
+    * ``MAIL_TEST_ENV`` : default ``False``
+
+    * ``DEFAULT_MAIL_SENDER`` : default ``None``
+
+    :param app: Flask application instance
+
+.. class:: Message
+
+    .. method:: __init__(subject, recipients=[], body=None, html=None, sender=None)
+
+    :param subject: subject of the email message
+    :param recipients: email recipients list
+    :param body: body of email
+    :param html: HTML part of email
+    :param sender: from address (uses ``DEFAULT_MAIL_SENDER`` by default)
+
+    .. method:: add_recipient(recipient)
+    
+    Adds another email address to the ``recipients`` list.
+
+    :param recipient: email address of recipient
+    
+    .. method:: attach(filename, content_type, data, disposition=None)
+
+    Adds an attachment to the message, for example::
+
+        with app.open_resource("image.png") as fp:
+            msg.attach("image.png", "image/png", fp.read())
+
+    :param filename: name given to the attachment
+    :param content_type: attachment mimetype
+    :param data: data to be attached
+    :param disposition: content disposition
+
+    .. method:: send(relay=None):
+
+    Sends the message. If ``MAIL_TEST_ENV`` is ``True`` then does not actually send the
+    message, instead the message is added to the global object as ``g.outbox``.
+    
+    :param relay: Lamson ``Relay`` instance, uses ``app.mail_relay`` by default.
 
