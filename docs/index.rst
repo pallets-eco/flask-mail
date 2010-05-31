@@ -20,7 +20,7 @@ Install with **pip** and **easy_install**::
 
     pip install flask-mail
 
-Download the latest version from Bitbucket::
+or download the latest version from Bitbucket::
 
     hg clone http://bitbucket.org/danjac/flask-mail
 
