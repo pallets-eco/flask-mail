@@ -2,15 +2,9 @@
 flask-mail
 ----------
 
-Description goes here...
+A Flask extension for sending email. 
 
-Links
-`````
-
-* `documentation <http://packages.python.org/flask-mail>`_
-* `development version
-  <http://bitbucket.org/danjac/flask-mail/get/tip.gz#egg=flask-mail-dev`_
-
+Uses the Lamson mail framework.
 
 """
 from setuptools import setup

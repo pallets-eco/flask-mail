@@ -4,6 +4,7 @@ syntax: glob
 *.db
 *.swp
 *.swo
+*.zip
 *~
 
 dist
