@@ -222,7 +222,7 @@ API
     Sends the message. If ``MAIL_TEST_ENV`` is ``True`` then does not actually send the
     message, instead the message is added to the global object as ``g.outbox``.
     
-    If message contains multilines then raises a ``BadErrorHeader``.
+    If message headers contain multilines then raises a ``BadErrorHeader``.
 
     :param relay: Lamson ``Relay`` instance, uses ``app.mail_relay`` by default.
 
