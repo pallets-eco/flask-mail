@@ -181,7 +181,7 @@ API
 
 .. class:: Message
 
-    .. method:: __init__(subject, recipients=[], body=None, html=None, sender=None)
+    .. method:: __init__(subject, recipients=None, body=None, html=None, sender=None)
 
     :param subject: subject of the email message
     :param recipients: email recipients list

@@ -80,7 +80,7 @@ def init_mail(app):
 class Message(object):
 
     def __init__(self, subject, 
-                 recipients=[], 
+                 recipients=None, 
                  body=None, 
                  html=None, 
                  sender=None):
@@ -92,6 +92,9 @@ class Message(object):
         self.sender = sender
         self.body = body
         self.html = html
+
+        if recipients is None:
+            recipients = []
 
         self.recipients = recipients
         
