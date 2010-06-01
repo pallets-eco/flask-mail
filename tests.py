@@ -26,7 +26,6 @@ class TestMessage(TestCase):
 
     def test_initialize(self):
 
-
         msg = Message(subject="subject",
                       recipients=["to@example.com"])
 

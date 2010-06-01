@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: flask-mail
-Version: 0.1
+Version: 0.1.1
 Summary: Flask extension for sending email
 Home-page: http://bitbucket.org/danjac/flask-mail
 Author: Dan Jacob
