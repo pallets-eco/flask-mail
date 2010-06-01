@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 
 from flask import Flask, g
-from flaskext.mail import init_mail, Message
+from flaskext.mail import init_mail, Message, BadHeaderError
 
 class TestCase(unittest.TestCase):
 
@@ -134,5 +136,34 @@ class TestMessage(TestCase):
                                       "this is a test",
                                       None)
  
+    def test_bad_header_subject(self):
+
+        msg = Message(subject="testing\n\r",
+                      sender="from@example.com",
+                      body="testing",
+                      recipients=["to@example.com"])
+
+        self.assertRaises(BadHeaderError, msg.send)
+
+    def test_bad_header_sender(self):
+
+        msg = Message(subject="testing",
+                      sender="from@example.com\n\r",
+                      recipients=["to@example.com"],
+                      body="testing")
+
+        self.assertRaises(BadHeaderError, msg.send)
+
+    def test_bad_header_recipient(self):
+
+        msg = Message(subject="testing",
+                      sender="from@example.com",
+                      recipients=[
+                          "to@example.com",
+                          "to\r\n@example.com"],
+                      body="testing")
+
+        self.assertRaises(BadHeaderError, msg.send)
+
 
 

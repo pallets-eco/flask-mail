@@ -146,6 +146,12 @@ thread local ``g`` object, so you can then inspect what emails are sent
 
     assert g.outbox[0].subject == "testing"
 
+Header injection
+----------------
+
+To prevent `header injection <http://www.nyphp.org/PHundamentals/8_Preventing-Email-Header-Injection>`_ attempts to send
+a message with newlines in the subject, sender or recipient addresses will result in a ``BadHeaderError``.
+
 API
 ---
 
@@ -178,6 +184,10 @@ API
     The ``smtplib`` `debug level <http://docs.python.org/library/smtplib.html#smtplib.SMTP.set_debuglevel>`_ will be set to the value of ``MAIL_DEBUG``.  
     
     :param app: Flask application instance
+
+.. class:: BadHeaderError
+
+    Exception raised if message headers contain multilines.
 
 .. class:: Message
 
@@ -212,6 +222,8 @@ API
     Sends the message. If ``MAIL_TEST_ENV`` is ``True`` then does not actually send the
     message, instead the message is added to the global object as ``g.outbox``.
     
+    If message contains multilines then raises a ``BadErrorHeader``.
+
     :param relay: Lamson ``Relay`` instance, uses ``app.mail_relay`` by default.
 
 .. _Flask: http://flask.pocoo.org

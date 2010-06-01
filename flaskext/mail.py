@@ -14,6 +14,8 @@ from flask import current_app, g
 from lamson.server import Relay
 from lamson.mail import MailResponse
 
+class BadHeaderError(Exception): pass
+
 def init_mail(app):
     """
     Initializes a Lamson Relay object. 
@@ -116,12 +118,26 @@ class Message(object):
             response.attach(filename, content_type, data, disp)
 
         return response
-
+    
+    def is_bad_headers(self):
+        """
+        Checks for bad headers i.e. newlines in subject, sender or recipients.
+        """
+       
+        for val in [self.subject, self.sender] + self.recipients:
+            for c in '\r\n':
+                if c in val:
+                    return True
+        return False
+        
     def send(self, relay=None):
         
         assert self.recipients, "No recipients have been added"
         assert self.body or self.html, "No body or HTML has been set"
         assert self.sender, "No sender address has been set"
+
+        if self.is_bad_headers():
+            raise BadHeaderError
 
         if current_app.config.get("MAIL_TEST_ENV", False):
             
