@@ -34,9 +34,22 @@ class TestMessage(TestCase):
         assert msg.sender == "support@mysite.com"
         assert msg.recipients == ["to@example.com"]
 
+    def test_recipients_properly_initialized(self):
+
         msg = Message(subject="subject")
 
         assert msg.recipients == []
+
+        msg2 = Message(subject="subject")
+        msg2.add_recipient("somebody@here.com")
+
+        assert len(msg.recipients) == 0
+
+        msg3 = Message(subject="subject")
+        msg3.add_recipient("somebody@here.com")
+
+        assert len(msg.recipients) == 0
+
 
     def test_add_recipient(self):
 
