@@ -138,7 +138,7 @@ suppressed. Calling ``send()`` on your messages will not result in
 any messages being sent.
 
 However, it's still useful to track in  your unit tests which 
-mails have been sent their details.
+emails have been sent.
 
 When ``MAIL_TEST_ENV`` is on, an ``outbox`` list is attached to the
 thread local ``g`` object, so you can then inspect what emails are sent
