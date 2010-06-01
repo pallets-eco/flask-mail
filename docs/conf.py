@@ -94,7 +94,7 @@ exclude_trees = ['_build']
 html_theme = 'flask_small'
 #html_theme = 'default'
 html_theme_options = {
-     'index_logo': 'flask-mail.jpg',
+     'index_logo': 'flask-mail.png',
      'github_fork': None
 }
 
