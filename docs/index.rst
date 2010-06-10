@@ -185,6 +185,16 @@ API
 
         :param app: Flask application instance
 
+.. class:: Relay
+        
+        Wrapper for Lamson Relay class with additional functionality.
+
+    .. method:: send_many(messages)
+        
+        Sends a number of messages, re-using the same connection.
+
+        :param message: iterable of Message instances
+
 .. class:: BadHeaderError
 
         Exception raised if message headers contain multilines.
