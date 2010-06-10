@@ -165,5 +165,18 @@ class TestMessage(TestCase):
 
         self.assertRaises(BadHeaderError, msg.send)
 
+class TestRelay(TestCase):
 
+     def test_send_many(self):
+        
+        messages = []
 
+        for i in xrange(100):
+            msg = Message(subject="testing",
+                          recipients=["to@example.com"],
+                          body="testing")
+            
+            messages.append(msg)
+
+        self.app.mail_relay.send_many(messages)
+        assert len(g.outbox) == 100

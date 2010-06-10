@@ -8,10 +8,11 @@
     :copyright: (c) 2010 by Dan Jacob.
     :license: BSD, see LICENSE for more details.
 """
+import logging
 
 from flask import current_app, g
 
-from lamson.server import Relay
+from lamson.server import Relay as LamsonRelay
 from lamson.mail import MailResponse
 
 class BadHeaderError(Exception): pass
@@ -78,6 +79,38 @@ def init_mail(app):
                            use_tls,
                            debug)
 
+class Relay(LamsonRelay):
+    """
+    Subclass of base Lamson Relay class, which includes
+    some extra functionality.
+    """
+
+    def send_many(self, messages):
+        """
+        Sends many messages, re-using the same connection.
+        """
+        
+        if current_app.config.get("MAIL_TEST_ENV", False):
+            # just send as normal, as they won't really get sent
+            for message in messages:
+                message.send(relay=self)
+
+            return
+
+        try:
+            relay_host = self.configure_relay(self.hostname)
+        except socket.error:
+            logging.exception("Failed to connect to host %s:%d" % (self.hostname, self.port))
+            return
+
+        for message in messages:
+            relay_host.sendmail(message.sender, 
+                                message.recipients, 
+                                str(message.get_response()))
+        
+        logging.debug("%d messages sent" % len(messages))
+
+        relay_host.quit()
 
 class Message(object):
 
