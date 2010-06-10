@@ -187,7 +187,7 @@ API
 
 .. class:: Relay
         
-        Wrapper for Lamson Relay class with additional functionality.
+    Wrapper for Lamson Relay class with additional functionality.
 
     .. method:: send_many(messages)
         
@@ -197,7 +197,7 @@ API
 
 .. class:: BadHeaderError
 
-        Exception raised if message headers contain multilines.
+    Exception raised if message headers contain multilines.
 
 .. class:: Message
 
