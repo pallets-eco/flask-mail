@@ -8,7 +8,6 @@
     :copyright: (c) 2010 by Dan Jacob.
     :license: BSD, see LICENSE for more details.
 """
-import logging
 
 from flask import current_app, g
 
@@ -32,6 +31,7 @@ def init_mail(app):
     MAIL_USERNAME : default None
     MAIL_PASSWORD : default None
     MAIL_TEST_ENV : default False
+    MAIL_BATCH_SIZE : default None
     DEFAULT_MAIL_SENDER : default None
     
     The relay object is appended to the application instance
@@ -85,32 +85,48 @@ class Relay(LamsonRelay):
     some extra functionality.
     """
 
-    def send_many(self, messages):
+    def send_many(self, messages, batch_size=None):
         """
         Sends many messages, re-using the same connection.
+        The batch_size parameter determines the max number 
+        of messages sent with an open connection; when this is
+        exceeded the connection is closed and re-opened.
+
+        If batch_size is None then the MAIL_BATCH_SIZE config
+        setting is used; if that is also None (default) then 
+        no batch limit is set.
         """
         
         if current_app.config.get("MAIL_TEST_ENV", False):
             # just send as normal, as they won't really get sent
             for message in messages:
                 message.send(relay=self)
-
             return
 
-        try:
-            relay_host = self.configure_relay(self.hostname)
-        except socket.error:
-            logging.exception("Failed to connect to host %s:%d" % (self.hostname, self.port))
-            return
+        if batch_size is None:
+            batch_size = current_app.config.get("MAIL_BATCH_SIZE", None)
+            if batch_size is None:
+                batch_size = len(messages)
 
-        for message in messages:
+        relay_host = None
+
+        for counter, message in enumerate(messages, 1):
+            if relay_host is None:
+                relay_host = self.configure_relay(self.hostname)
+
             relay_host.sendmail(message.sender, 
                                 message.recipients, 
                                 str(message.get_response()))
         
-        logging.debug("%d messages sent" % len(messages))
 
-        relay_host.quit()
+            if counter == batch_size:
+                relay_host.quit()
+                relay_host = None
+
+        # ensure connection closed
+
+        if relay_host is not None:
+            relay_host.quit()
 
 class Message(object):
 

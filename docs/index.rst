@@ -179,6 +179,8 @@ API
 
         * ``MAIL_TEST_ENV`` : default ``False``
 
+        * ``MAIL_BATCH_SIZE`` : default ``None``
+
         * ``DEFAULT_MAIL_SENDER`` : default ``None``
 
         The ``smtplib`` `debug level <http://docs.python.org/library/smtplib.html#smtplib.SMTP.set_debuglevel>`_ will be set to the value of ``MAIL_DEBUG``.  
@@ -189,11 +191,14 @@ API
         
     Wrapper for Lamson Relay class with additional functionality.
 
-    .. method:: send_many(messages)
+    .. method:: send_many(messages, batch_size=None)
         
-        Sends a number of messages, re-using the same connection.
+        Sends a number of messages, re-using the same connection. If ``batch_size`` is set 
+        then will send a maximum of ``batch_size`` messages before closing and re-opening
+        the connection.
 
         :param message: iterable of Message instances
+        :param batch_size: number of messages sent with single connection (``MAIL_BATCH_SIZE`` by default)
 
 .. class:: BadHeaderError
 
