@@ -9,7 +9,9 @@ emails to your users.
 The **flask-mail** extension provides a simple interface to set up SMTP with your
 `Flask`_ application and to send messages from views.
 
-This extension requires the `Lamson email library <http://lamsonproject.org>`_.
+This extension requires the `Lamson email library <http://lamsonproject.org>`_. However
+it only uses the low-level API and does not require you set up a Lamson application with
+your mail server.
 
 Source code and issue tracking at `Bitbucket`_.
 
@@ -34,7 +36,8 @@ in the same virtualenv as your Flask application(s).
 Configuring flask-mail
 ----------------------
 
-Flask-mail is configured through the standard Flask configuration options:
+Flask-mail is configured through the standard Flask config API. These are the available
+options (each is explained later in the documentation):
 
 * ``MAIL_SERVER`` : default ``'localhost'``
 
@@ -52,6 +55,9 @@ Flask-mail is configured through the standard Flask configuration options:
 
 * ``DEFAULT_MAIL_SENDER`` : default ``None``
 
+In addition the standard Flask ``TESTING`` configuration option is used by flask-mail
+in unit tests (see below).
+
 To set up flask-ext with your application use the ``init_mail`` function::
 
     from flask import Flask
@@ -63,7 +69,7 @@ To set up flask-ext with your application use the ``init_mail`` function::
 Under the hood
 --------------
 
-The ``init_mail`` function creates a Lamson ``Relay`` instance, which is attached
+The ``init_mail`` function creates a ``Relay`` instance, which is attached
 to the application instance as ``mail_relay``. Most of the time you should
 not need to access the relay directly::
 
@@ -193,7 +199,7 @@ API
         then will send a maximum of ``batch_size`` messages before closing and re-opening
         the connection.
 
-        :param message: iterable of Message instances
+        :param messages: iterable of Message instances
         :param batch_size: number of messages sent with single connection (``MAIL_BATCH_SIZE`` by default)
 
 .. class:: BadHeaderError
@@ -235,7 +241,7 @@ API
     
         If message headers contain multilines then raises a ``BadErrorHeader``.
 
-        :param relay: Lamson ``Relay`` instance, uses ``app.mail_relay`` by default.
+        :param relay: ``Relay`` instance, uses ``app.mail_relay`` by default.
 
 .. _Flask: http://flask.pocoo.org
 .. _Bitbucket: http://bitbucket.org/danjac/flask-mail
