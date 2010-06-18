@@ -30,7 +30,6 @@ def init_mail(app):
     MAIL_DEBUG : default app.debug
     MAIL_USERNAME : default None
     MAIL_PASSWORD : default None
-    MAIL_TEST_ENV : default False
     MAIL_BATCH_SIZE : default None
     DEFAULT_MAIL_SENDER : default None
     
@@ -53,7 +52,7 @@ def init_mail(app):
     If DEFAULT_MAIL_SENDER is set this will be used for 
     the sender address if no sender set.
 
-    If you set MAIL_TEST_ENV to True:
+    If you set TESTING to True:
 
     1) no emails are actually sent
     2) messages are added to a list in the g object, "outbox"
@@ -97,7 +96,7 @@ class Relay(LamsonRelay):
         no batch limit is set.
         """
         
-        if current_app.config.get("MAIL_TEST_ENV", False):
+        if current_app.config.get("TESTING", False):
             # just send as normal, as they won't really get sent
             for message in messages:
                 message.send(relay=self)
@@ -188,7 +187,7 @@ class Message(object):
         if self.is_bad_headers():
             raise BadHeaderError
 
-        if current_app.config.get("MAIL_TEST_ENV", False):
+        if current_app.config.get("TESTING", False):
             
             outbox = getattr(g, 'outbox', [])
             outbox.append(self)

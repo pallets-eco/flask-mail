@@ -7,7 +7,7 @@ from flaskext.mail import init_mail, Message, BadHeaderError
 
 class TestCase(unittest.TestCase):
 
-    MAIL_TEST_ENV = True
+    TESTING = True
     DEFAULT_MAIL_SENDER = "support@mysite.com"
 
     def setUp(self):
@@ -108,7 +108,7 @@ class TestMessage(TestCase):
         pass.
         """
 
-        self.app.config['MAIL_TEST_ENV'] = False
+        self.app.config['TESTING'] = False
         msg = Message(subject="testing",
                       recipients=["to@example.com"],
                       body="testing")

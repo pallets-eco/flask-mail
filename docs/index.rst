@@ -50,8 +50,6 @@ Flask-mail is configured through the standard Flask configuration options:
 
 * ``MAIL_PASSWORD`` : default ``None``
 
-* ``MAIL_TEST_ENV`` : default ``False``
-
 * ``DEFAULT_MAIL_SENDER`` : default ``None``
 
 To set up flask-ext with your application use the ``init_mail`` function::
@@ -133,14 +131,14 @@ environment, it's useful to be able to suppress email sending (although you can
 also set up Lamson as a test mail server on your local machine - see the
 Lamson documentation for details).
 
-If the setting ``MAIL_TEST_ENV`` is set to ``True``, emails will be
+If the setting ``TESTING`` is set to ``True``, emails will be
 suppressed. Calling ``send()`` on your messages will not result in 
 any messages being sent.
 
 However, it's still useful to track in  your unit tests which 
 emails have been sent.
 
-When ``MAIL_TEST_ENV`` is on, an ``outbox`` list is attached to the
+When ``TESTING`` is on, an ``outbox`` list is attached to the
 thread local ``g`` object, so you can then inspect what emails are sent
 (or would be sent in production mode)::
 
@@ -176,8 +174,6 @@ API
         * ``MAIL_USERNAME`` : default ``None``
 
         * ``MAIL_PASSWORD`` : default ``None``
-
-        * ``MAIL_TEST_ENV`` : default ``False``
 
         * ``MAIL_BATCH_SIZE`` : default ``None``
 
@@ -234,7 +230,7 @@ API
 
     .. method:: send(relay=None):
 
-        Sends the message. If ``MAIL_TEST_ENV`` is ``True`` then does not actually send the
+        Sends the message. If ``TESTING`` is ``True`` then does not actually send the
         message, instead the message is added to the global object as ``g.outbox``.
     
         If message headers contain multilines then raises a ``BadErrorHeader``.
