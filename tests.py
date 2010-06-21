@@ -59,6 +59,14 @@ class TestMessage(TestCase):
 
         assert msg.recipients == ["to@example.com"]
 
+    
+    def test_sender_as_tuple(self):
+
+        msg = Message(subject="testing",
+                      sender=("tester", "tester@example.com"))
+
+        assert msg.sender == "tester <tester@example.com>"
+
     def test_send(self):
 
         msg = Message(subject="testing",

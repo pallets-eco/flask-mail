@@ -102,6 +102,14 @@ sender explicity, as it will use this configuration value by default::
     msg = Message("Hello",
                   recipients=["to@example.com"])
 
+If the ``sender`` is a two-element tuple, this will be split into name
+and address::
+
+    msg = Message("Hello",
+                  sender=("Me", "me@example.com"))
+
+    assert msg.sender == "Me <me@example.com>"
+
 The message can contain a body and/or HTML::
 
     msg.body = "testing"
@@ -215,6 +223,8 @@ API
         :param body: body of email
         :param html: HTML part of email
         :param sender: from address (uses ``DEFAULT_MAIL_SENDER`` by default)
+    
+        Note that ``sender`` can be a two-element tuple of (name, address) or a string.
 
     .. method:: add_recipient(recipient)
     

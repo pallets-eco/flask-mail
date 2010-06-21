@@ -138,6 +138,10 @@ class Message(object):
         if sender is None:
             sender = current_app.config.get("DEFAULT_MAIL_SENDER")
 
+        if isinstance(sender, tuple):
+            # sender can be tuple of (name, address)
+            sender = "%s <%s>" % sender
+
         self.subject = subject
         self.sender = sender
         self.body = body
