@@ -16,6 +16,7 @@ from lamson.mail import MailResponse
 
 class BadHeaderError(Exception): pass
 
+
 def init_mail(app):
     """
     Initializes a Lamson Relay object. 
@@ -78,6 +79,7 @@ def init_mail(app):
                            use_tls,
                            debug)
 
+
 class Relay(LamsonRelay):
     """
     Subclass of base Lamson Relay class, which includes
@@ -126,6 +128,7 @@ class Relay(LamsonRelay):
 
         if relay_host is not None:
             relay_host.quit()
+
 
 class Message(object):
 
