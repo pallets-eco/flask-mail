@@ -153,7 +153,7 @@ class Message(object):
         if recipients is None:
             recipients = []
 
-        self.recipients = recipients
+        self.recipients = list(recipients)
         
         self.attachments = []
 
