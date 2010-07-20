@@ -113,6 +113,7 @@ class TestMessage(TestCase):
 
         self.mail.send(msg)
         
+        self.app.config['TESTING'] = True
         try:
             assert False, g.outbox
         except AttributeError:
@@ -172,12 +173,15 @@ class TestConnection(TestCase):
         
         messages = []
 
+        assert self.app.config['TESTING']
+
         with self.app.test_request_context():
-            with self.mail.connect():
+            with self.mail.connect() as connection:
                 for i in xrange(100):
                     msg = Message(subject="testing",
                                   recipients=["to@example.com"],
                                   body="testing")
             
+                    msg.send(connection)
 
             assert len(g.outbox) == 100
