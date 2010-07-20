@@ -3,7 +3,7 @@
 import unittest
 
 from flask import Flask, g
-from flaskext.mail import init_mail, Message, BadHeaderError
+from flaskext.mail import Mail, Message, BadHeaderError
 
 class TestCase(unittest.TestCase):
 
@@ -15,7 +15,7 @@ class TestCase(unittest.TestCase):
         self.app = Flask(__name__)
         self.app.config.from_object(self)
         
-        init_mail(self.app)
+        self.mail = Mail(self.app)
 
         self.ctx = self.app.test_request_context()
         self.ctx.push()
@@ -65,19 +65,7 @@ class TestMessage(TestCase):
         msg = Message(subject="testing",
                       sender=("tester", "tester@example.com"))
 
-        assert msg.sender == "tester <tester@example.com>"
 
-    def test_send(self):
-
-        msg = Message(subject="testing",
-                      recipients=["to@example.com"],
-                      body="testing")
-
-        msg.send()
-
-        assert len(g.outbox) == 1
-        assert g.outbox[0].subject == "testing"
-        assert g.outbox[0].body == "testing"
 
     
     def test_send_without_sender(self):
@@ -88,7 +76,7 @@ class TestMessage(TestCase):
                       recipients=["to@example.com"],
                       body="testing")
 
-        self.assertRaises(AssertionError, msg.send)
+        self.assertRaises(AssertionError, self.mail.send, msg)
 
     def test_send_without_recipients(self):
 
@@ -96,18 +84,18 @@ class TestMessage(TestCase):
                       recipients=[],
                       body="testing")
 
-        self.assertRaises(AssertionError, msg.send)
+        self.assertRaises(AssertionError, self.mail.send, msg)
 
     def test_send_without_body(self):
 
         msg = Message(subject="testing",
                       recipients=["to@example.com"])
 
-        self.assertRaises(AssertionError, msg.send)
+        self.assertRaises(AssertionError, self.mail.send, msg)
 
         msg.html = "<b>test</b>"
 
-        msg.send()
+        self.mail.send(msg)
 
     def test_normal_send(self):
         """
@@ -117,11 +105,13 @@ class TestMessage(TestCase):
         """
 
         self.app.config['TESTING'] = False
+        self.mail.init_app(self.app)
+
         msg = Message(subject="testing",
                       recipients=["to@example.com"],
                       body="testing")
 
-        msg.send()
+        self.mail.send(msg)
         
         try:
             assert False, g.outbox
@@ -151,7 +141,7 @@ class TestMessage(TestCase):
                       body="testing",
                       recipients=["to@example.com"])
 
-        self.assertRaises(BadHeaderError, msg.send)
+        self.assertRaises(BadHeaderError, self.mail.send, msg)
 
     def test_bad_header_sender(self):
 
@@ -160,7 +150,7 @@ class TestMessage(TestCase):
                       recipients=["to@example.com"],
                       body="testing")
 
-        self.assertRaises(BadHeaderError, msg.send)
+        self.assertRaises(BadHeaderError, self.mail.send, msg)
 
     def test_bad_header_recipient(self):
 
@@ -171,20 +161,23 @@ class TestMessage(TestCase):
                           "to\r\n@example.com"],
                       body="testing")
 
-        self.assertRaises(BadHeaderError, msg.send)
+        self.assertRaises(BadHeaderError, self.mail.send, msg)
 
-class TestRelay(TestCase):
+class TestConnection(TestCase):
 
-     def test_send_many(self):
+    def test_send_single(self):
+        pass
+
+    def test_send_many(self):
         
         messages = []
 
-        for i in xrange(100):
-            msg = Message(subject="testing",
-                          recipients=["to@example.com"],
-                          body="testing")
+        with self.app.test_request_context():
+            with self.mail.connect():
+                for i in xrange(100):
+                    msg = Message(subject="testing",
+                                  recipients=["to@example.com"],
+                                  body="testing")
             
-            messages.append(msg)
 
-        self.app.mail_relay.send_many(messages)
-        assert len(g.outbox) == 100
+            assert len(g.outbox) == 100

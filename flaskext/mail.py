@@ -9,20 +9,67 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask import current_app, g
+from flask import _request_ctx_stack
 
-from lamson.server import Relay as LamsonRelay
+from lamson.server import Relay
 from lamson.mail import MailResponse
+
 
 class BadHeaderError(Exception): pass
 
 
-def init_mail(app):
+class Connection(object):
     """
-    Initializes a Lamson Relay object. 
+    Handles connection to host.
+    """
+
+    def __init__(self, mail, testing=False, send_many=False):
+
+        self.mail = mail
+        self.relay = mail.relay
+        self.testing = testing
+        self.send_many = send_many
+
+    def __enter__(self):
+
+        # if send_many, create a permanent connection to the host
+
+        if self.send_many and not self.testing:
+            self.host = self.relay.configure(self.relay.hostname)
+        else:
+            self.host = None
+        
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        if self.host:
+            self.host.quit()
+
+    def send_test_mail(self, message):
+
+        outbox = getattr(_request_ctx_stack.top.g, 'outbox', [])
+        outbox.append(message)
+
+        _request_ctx_stack.top.g.outbox = outbox
+    
+    def send(self, message):
+        if self.testing:
+            self.send_test_mail(message)
+        elif self.host:
+            self.host.sendmail(message.sender,
+                               message.recipients,
+                               str(message.get_response()))
+        else:
+            self.relay.deliver(message.get_response())
+
+    
+class Mail(object):
+    
+    """
+    Manages email messaging
 
     The following configuration options can be passed in the 
-    Flask configuration file:
+    Flask configuration:
 
     MAIL_SERVER : default 'localhost'
     MAIL_PORT : default 25
@@ -37,9 +84,13 @@ def init_mail(app):
     The relay object is appended to the application instance
     as mail_relay and to a LocalProxy object as 'relay'. You
     can use this with a Lamson MailResponse instance to send 
-    more complex emails, or just use the send() method:
+    more complex emails, or just use the send() method::
 
-    from flaskext.mail import Message
+
+    from flaskext.mail import Mail, Message
+
+    app = Flask(__name__)
+    mail = Mail(app) # or mail.init_app(app)
 
     @app.route("/")
     def index():
@@ -48,7 +99,15 @@ def init_mail(app):
                       body="hello world",
                       recipients=["me@mysite.com"])
 
-        msg.send()
+        mail.send(msg)
+
+
+    By default ``mail.send()`` will use a single connection to 
+    the mail server. If you are sending a lot of messages it's
+    better to re-use the same connection::
+
+        with mail.connect() as conn:
+            conn.send(msg)
 
     If DEFAULT_MAIL_SENDER is set this will be used for 
     the sender address if no sender set.
@@ -62,72 +121,55 @@ def init_mail(app):
     to actually access a mail server, but you still want to
     track emails sent under test conditions.
     """
+
+    relay_class = Relay
+
+    def __init__(self, app=None):
+        self._relay = None
+        
+        if app is not None:
+            self.init_app(app)
+
+    def init_app(self, app):
+        """
+        Initializes your mail settings from the application
+        settings.
+
+        You can use this if you want to set up your Mail instance
+        at configuration time.
+        """
+
+
+        server = app.config.get('MAIL_SERVER', '127.0.0.1')
+        username = app.config.get('MAIL_USERNAME')
+        password = app.config.get('MAIL_PASSWORD')
+        port = app.config.get('MAIL_PORT', 25)
+        use_tls = app.config.get('MAIL_USE_TLS', False)
+        use_ssl = app.config.get('MAIL_USE_SSL', False)
+        debug = int(app.config.get('MAIL_DEBUG', app.debug))
     
-    server = app.config.get('MAIL_SERVER', '127.0.0.1')
-    username = app.config.get('MAIL_USERNAME')
-    password = app.config.get('MAIL_PASSWORD')
-    port = app.config.get('MAIL_PORT', 25)
-    use_tls = app.config.get('MAIL_USE_TLS', False)
-    use_ssl = app.config.get('MAIL_USE_SSL', False)
-    debug = int(app.config.get('MAIL_DEBUG', app.debug))
+        self.relay = self.relay_class(server, port, username, password,
+            use_ssl, use_tls, debug)
 
-    app.mail_relay = Relay(server, 
-                           port,
-                           username, 
-                           password,
-                           use_ssl,
-                           use_tls,
-                           debug)
+        self.testing = app.config['TESTING']
 
+        self.app = app
 
-class Relay(LamsonRelay):
-    """
-    Subclass of base Lamson Relay class, which includes
-    some extra functionality.
-    """
-
-    def send_many(self, messages, batch_size=None):
+    def send(self, message):
         """
-        Sends many messages, re-using the same connection.
-        The batch_size parameter determines the max number 
-        of messages sent with an open connection; when this is
-        exceeded the connection is closed and re-opened.
+        Sends a single message instance. If TESTING then
+        will add the message to **g.outbox**.
 
-        If batch_size is None then the MAIL_BATCH_SIZE config
-        setting is used; if that is also None (default) then 
-        no batch limit is set.
+        :param message: a Message instance.
         """
-        
-        if current_app.config.get("TESTING", False):
-            # just send as normal, as they won't really get sent
-            for message in messages:
-                message.send(relay=self)
-            return
 
-        if batch_size is None:
-            batch_size = current_app.config.get("MAIL_BATCH_SIZE", None)
-            if batch_size is None:
-                batch_size = len(messages)
+        with self.connect(send_many=False) as connection:
+            message.send(connection)
 
-        relay_host = None
-
-        for counter, message in enumerate(messages, 1):
-            if relay_host is None:
-                relay_host = self.configure_relay(self.hostname)
-
-            relay_host.sendmail(message.sender, 
-                                message.recipients, 
-                                str(message.get_response()))
-        
-
-            if counter == batch_size:
-                relay_host.quit()
-                relay_host = None
-
-        # ensure connection closed
-
-        if relay_host is not None:
-            relay_host.quit()
+    def connect(self, send_many=True):
+        return Connection(self, 
+                          send_many=send_many, 
+                          testing=self.testing)
 
 
 class Message(object):
@@ -137,9 +179,11 @@ class Message(object):
                  body=None, 
                  html=None, 
                  sender=None):
-        
+
+
         if sender is None:
-            sender = current_app.config.get("DEFAULT_MAIL_SENDER")
+            app = _request_ctx_stack.top.app
+            sender = app.config.get("DEFAULT_MAIL_SENDER")
 
         if isinstance(sender, tuple):
             # sender can be tuple of (name, address)
@@ -161,6 +205,7 @@ class Message(object):
         """
         Creates a Lamson MailResponse instance
         """
+        
 
         response = MailResponse(Subject=self.subject, 
                                 To=self.recipients,
@@ -185,7 +230,7 @@ class Message(object):
                     return True
         return False
         
-    def send(self, relay=None):
+    def send(self, connection):
         
         assert self.recipients, "No recipients have been added"
         assert self.body or self.html, "No body or HTML has been set"
@@ -194,18 +239,7 @@ class Message(object):
         if self.is_bad_headers():
             raise BadHeaderError
 
-        if current_app.config.get("TESTING", False):
-            
-            outbox = getattr(g, 'outbox', [])
-            outbox.append(self)
-            g.outbox = outbox
-            return
-
-        if relay is None:
-
-            relay = current_app.mail_relay
-
-        relay.deliver(self.get_response())
+        connection.send(self)
 
     def add_recipient(self, recipient):
         
