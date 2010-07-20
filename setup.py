@@ -4,14 +4,12 @@ flask-mail
 
 A Flask extension for sending email. 
 
-Uses the Lamson mail framework.
-
 """
 from setuptools import setup
 
 
 setup(
-    name='flask-mail',
+    name='Flask-Mail',
     version='0.3',
     url='http://bitbucket.org/danjac/flask-mail',
     license='BSD',

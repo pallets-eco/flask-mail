@@ -19,9 +19,8 @@ class BadHeaderError(Exception): pass
 
 
 class Connection(object):
-    """
-    Handles connection to host.
-    """
+
+    """Handles connection to host."""
 
     def __init__(self, mail, testing=False, send_many=False):
 
@@ -68,58 +67,7 @@ class Mail(object):
     """
     Manages email messaging
 
-    The following configuration options can be passed in the 
-    Flask configuration:
-
-    MAIL_SERVER : default 'localhost'
-    MAIL_PORT : default 25
-    MAIL_USE_TLS : default False
-    MAIL_USE_SSL : default False
-    MAIL_DEBUG : default app.debug
-    MAIL_USERNAME : default None
-    MAIL_PASSWORD : default None
-    MAIL_BATCH_SIZE : default None
-    DEFAULT_MAIL_SENDER : default None
-    
-    The relay object is appended to the application instance
-    as mail_relay and to a LocalProxy object as 'relay'. You
-    can use this with a Lamson MailResponse instance to send 
-    more complex emails, or just use the send() method::
-
-
-    from flaskext.mail import Mail, Message
-
-    app = Flask(__name__)
-    mail = Mail(app) # or mail.init_app(app)
-
-    @app.route("/")
-    def index():
-        
-        msg = Message(subject="hello", 
-                      body="hello world",
-                      recipients=["me@mysite.com"])
-
-        mail.send(msg)
-
-
-    By default ``mail.send()`` will use a single connection to 
-    the mail server. If you are sending a lot of messages it's
-    better to re-use the same connection::
-
-        with mail.connect() as conn:
-            conn.send(msg)
-
-    If DEFAULT_MAIL_SENDER is set this will be used for 
-    the sender address if no sender set.
-
-    If you set TESTING to True:
-
-    1) no emails are actually sent
-    2) messages are added to a list in the g object, "outbox"
-
-    This is useful for unit tests where you do not want
-    to actually access a mail server, but you still want to
-    track emails sent under test conditions.
+    :param app: Flask instance
     """
 
     relay_class = Relay
@@ -137,6 +85,8 @@ class Mail(object):
 
         You can use this if you want to set up your Mail instance
         at configuration time.
+
+        :param app: Flask application instance
         """
 
 
@@ -173,6 +123,16 @@ class Mail(object):
 
 
 class Message(object):
+    
+    """
+    Encapsulates an email message.
+
+    :param subject: email subject header
+    :param recipients: list of email addresses
+    :param body: plain text message
+    :param html: HTML message
+    :param sender: email sender address, or DEFAULT_MAIL_SENDER by default
+    """
 
     def __init__(self, subject, 
                  recipients=None, 
@@ -205,7 +165,6 @@ class Message(object):
         """
         Creates a Lamson MailResponse instance
         """
-        
 
         response = MailResponse(Subject=self.subject, 
                                 To=self.recipients,
@@ -231,6 +190,9 @@ class Message(object):
         return False
         
     def send(self, connection):
+        """
+        Verifies and sends the message.
+        """
         
         assert self.recipients, "No recipients have been added"
         assert self.body or self.html, "No body or HTML has been set"
@@ -242,6 +204,11 @@ class Message(object):
         connection.send(self)
 
     def add_recipient(self, recipient):
+        """
+        Adds another recipient to the message.
+        
+        :param recipient: email address of recipient.
+        """
         
         self.recipients.append(recipient)
 
@@ -250,6 +217,15 @@ class Message(object):
                content_type=None, 
                data=None,
                disposition=None):
+        
+        """
+        Adds an attachment to the message.
+        
+        :param filename: filename of attachment
+        :param content_type: file mimetype
+        :param data: the raw file data
+        :param disposition: content-disposition (if any)
+        """
 
         self.attachments.append((filename, 
                                  content_type, 

@@ -6,21 +6,17 @@ flask-mail
 One of the most basic functions in a web application is the ability to send
 emails to your users.
 
-The **flask-mail** extension provides a simple interface to set up SMTP with your
-`Flask`_ application and to send messages from views.
-
-This extension requires the `Lamson email library <http://lamsonproject.org>`_. However
-it only uses the low-level API and does not require you set up a Lamson application with
-your mail server.
+The **Flask-Mail** extension provides a simple interface to set up SMTP with your
+`Flask`_ application and to send messages from your views and scripts.
 
 Source code and issue tracking at `Bitbucket`_.
 
-Installing flask-mail
+Installing Flask-Mail
 ---------------------
 
 Install with **pip** and **easy_install**::
 
-    pip install flask-mail
+    pip install Flask-Mail
 
 or download the latest version from Bitbucket::
 
@@ -33,49 +29,47 @@ or download the latest version from Bitbucket::
 If you are using **virtualenv**, it is assumed that you are installing flask-mail
 in the same virtualenv as your Flask application(s).
 
-Configuring flask-mail
+Configuring Flask-Mail
 ----------------------
 
-Flask-mail is configured through the standard Flask config API. These are the available
+**Flask-Mail** is configured through the standard Flask config API. These are the available
 options (each is explained later in the documentation):
 
-* ``MAIL_SERVER`` : default ``'localhost'``
+* **MAIL_SERVER** : default **'localhost'**
 
-* ``MAIL_PORT`` : default ``25``
+* **MAIL_PORT** : default **25**
 
-* ``MAIL_USE_TLS`` : default ``False``
+* **MAIL_USE_TLS** : default **False**
 
-* ``MAIL_USE_SSL`` : default ``False``
+* **MAIL_USE_SSL** : default **False**
 
-* ``MAIL_DEBUG`` : default ``app.debug``
+* **MAIL_DEBUG** : default **app.debug**
 
-* ``MAIL_USERNAME`` : default ``None``
+* **MAIL_USERNAME** : default **None**
 
-* ``MAIL_PASSWORD`` : default ``None``
+* **MAIL_PASSWORD** : default **None**
 
-* ``DEFAULT_MAIL_SENDER`` : default ``None``
+* **DEFAULT_MAIL_SENDER** : default **None**
 
-In addition the standard Flask ``TESTING`` configuration option is used by flask-mail
+In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Nail**
 in unit tests (see below).
 
-To set up flask-ext with your application use the ``init_mail`` function::
+Emails are managed through a ``Mail`` instance::
 
     from flask import Flask
-    from flaskext.mail import init_mail
+    from flaskext.mail import Mail
 
     app = Flask(__name__)
-    init_mail(app)
+    mail = Mail(app)
 
-Under the hood
---------------
+Alternatively you can set up your ``Mail`` instance later at configuration time, using the
+**init_app** method::
 
-The ``init_mail`` function creates a ``Relay`` instance, which is attached
-to the application instance as ``mail_relay``. Most of the time you should
-not need to access the relay directly::
+    mail = Mail()
 
     app = Flask(__name__)
-    init_mail(app)
-    assert app.mail_relay
+    mail.init_app(app)
+
 
 Sending messages
 ----------------
@@ -115,17 +109,30 @@ The message can contain a body and/or HTML::
     msg.body = "testing"
     msg.html = "<b>testing</b>"
 
-Finally just send the message::
+Finally, to send the message, you use the ``Mail`` instance configured with your Flask application::
 
-    msg.send()
+    mail.send(msg)
 
-You can pass another ``Relay`` instance if you need to (for example, you might
-use another mail server for newsletters)::
+Bulk emails
+-----------
 
-    from lamson.server import Relay
+Usually in a web application you will be sending one or two emails per request. In certain situations 
+you might want to be able to send perhaps dozens or hundreds of emails in a single batch - probably in 
+an external process such as a command-line script or cronjob.
 
-    another_relay = Relay(another_host)
-    msg.send(another_relay)
+In that case you do things slightly differently::
+
+    with mail.connect() as conn:
+        for user in users:
+            message = '...'
+            subject = "hello, %s" % user.name
+            msg = Message(recipients=[user.email],
+                          body=message,
+                          subject=subject)
+
+            conn.send(msg)
+
+The connection to your email host is kept alive and closed automatically once all the messages have been sent.
 
 Attachments
 -----------
@@ -135,15 +142,13 @@ Adding attachments is straightforward::
     with app.open_resource("image.png") as fp:
         msg.attach("image.png", "image/png", fp.read())
 
-See the API for details.
+See the `API`_ for details.
 
 Unit tests
 ----------
 
 When you are sending messages inside of unit tests, or in a development
-environment, it's useful to be able to suppress email sending (although you can
-also set up Lamson as a test mail server on your local machine - see the
-Lamson documentation for details).
+environment, it's useful to be able to suppress email sending.
 
 If the setting ``TESTING`` is set to ``True``, emails will be
 suppressed. Calling ``send()`` on your messages will not result in 
@@ -169,89 +174,11 @@ API
 
 .. module:: flaskext.mail
 
-.. function:: init_mail(app)
+.. autoclass:: Mail
+   :members:
 
-        Initializes the mail extension. Attaches a Lamson ``Relay`` instance to the Flask application as ``mail_relay``.
-
-        Uses the following Flask configuration values:
-
-        * ``MAIL_SERVER`` : default ``'localhost'``
-
-        * ``MAIL_PORT`` : default ``25``
-
-        * ``MAIL_USE_TLS`` : default ``False``
-
-        * ``MAIL_USE_SSL`` : default ``False``
-
-        * ``MAIL_DEBUG`` : default ``app.debug``
-
-        * ``MAIL_USERNAME`` : default ``None``
-
-        * ``MAIL_PASSWORD`` : default ``None``
-
-        * ``MAIL_BATCH_SIZE`` : default ``None``
-
-        * ``DEFAULT_MAIL_SENDER`` : default ``None``
-
-        The ``smtplib`` `debug level <http://docs.python.org/library/smtplib.html#smtplib.SMTP.set_debuglevel>`_ will be set to the value of ``MAIL_DEBUG``.  
-
-        :param app: Flask application instance
-
-.. class:: Relay
-        
-    Wrapper for Lamson Relay class with additional functionality.
-
-    .. method:: send_many(messages, batch_size=None)
-        
-        Sends a number of messages, re-using the same connection. If ``batch_size`` is set 
-        then will send a maximum of ``batch_size`` messages before closing and re-opening
-        the connection.
-
-        :param messages: iterable of Message instances
-        :param batch_size: number of messages sent with single connection (``MAIL_BATCH_SIZE`` by default)
-
-.. class:: BadHeaderError
-
-    Exception raised if message headers contain multilines.
-
-.. class:: Message
-
-    .. method:: __init__(subject, recipients=None, body=None, html=None, sender=None)
-
-        :param subject: subject of the email message
-        :param recipients: email recipients list
-        :param body: body of email
-        :param html: HTML part of email
-        :param sender: from address (uses ``DEFAULT_MAIL_SENDER`` by default)
-    
-        Note that ``sender`` can be a two-element tuple of (name, address) or a string.
-
-    .. method:: add_recipient(recipient)
-    
-        Adds another email address to the ``recipients`` list.
-
-        :param recipient: email address of recipient
-    
-    .. method:: attach(filename, content_type, data, disposition=None)
-
-        Adds an attachment to the message, for example::
-
-            with app.open_resource("image.png") as fp:
-                msg.attach("image.png", "image/png", fp.read())
-
-        :param filename: name given to the attachment
-        :param content_type: attachment mimetype
-        :param data: data to be attached
-        :param disposition: content disposition
-
-    .. method:: send(relay=None):
-
-        Sends the message. If ``TESTING`` is ``True`` then does not actually send the
-        message, instead the message is added to the global object as ``g.outbox``.
-    
-        If message headers contain multilines then raises a ``BadErrorHeader``.
-
-        :param relay: ``Relay`` instance, uses ``app.mail_relay`` by default.
+.. autoclass:: Message
+   :members:
 
 .. _Flask: http://flask.pocoo.org
 .. _Bitbucket: http://bitbucket.org/danjac/flask-mail
