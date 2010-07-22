@@ -8,6 +8,7 @@
     :copyright: (c) 2010 by Dan Jacob.
     :license: BSD, see LICENSE for more details.
 """
+from __future__ import absolute_import
 
 from flask import _request_ctx_stack
 
@@ -52,6 +53,11 @@ class Connection(object):
         _request_ctx_stack.top.g.outbox = outbox
     
     def send(self, message):
+        """
+        Sends message.
+        
+        :param message: Message instance.
+        """
         if self.testing:
             self.send_test_mail(message)
         elif self.host:
@@ -89,7 +95,6 @@ class Mail(object):
         :param app: Flask application instance
         """
 
-
         server = app.config.get('MAIL_SERVER', '127.0.0.1')
         username = app.config.get('MAIL_USERNAME')
         password = app.config.get('MAIL_PASSWORD')
@@ -117,6 +122,11 @@ class Mail(object):
             message.send(connection)
 
     def connect(self, send_many=True):
+        """
+        Opens a connection to the mail host.
+        
+        :param send_many: keep connection alive
+        """
         return Connection(self, 
                           send_many=send_many, 
                           testing=self.testing)
@@ -131,7 +141,7 @@ class Message(object):
     :param recipients: list of email addresses
     :param body: plain text message
     :param html: HTML message
-    :param sender: email sender address, or DEFAULT_MAIL_SENDER by default
+    :param sender: email sender address, or **DEFAULT_MAIL_SENDER** by default
     """
 
     def __init__(self, subject, 

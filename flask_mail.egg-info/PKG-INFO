@@ -12,8 +12,6 @@ Description:
         
         A Flask extension for sending email. 
         
-        Uses the Lamson mail framework.
-        
         
 Platform: any
 Classifier: Development Status :: 4 - Beta

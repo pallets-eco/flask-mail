@@ -130,7 +130,8 @@ In that case you do things slightly differently::
                           body=message,
                           subject=subject)
 
-            conn.send(msg)
+            conn.send(msg) 
+
 
 The connection to your email host is kept alive and closed automatically once all the messages have been sent.
 
@@ -175,10 +176,13 @@ API
 .. module:: flaskext.mail
 
 .. autoclass:: Mail
-   :members:
+   :members: send, connect
+
+.. autoclass:: Connection
+   :members: send
 
 .. autoclass:: Message
-   :members:
+   :members: attach, add_recipient
 
 .. _Flask: http://flask.pocoo.org
 .. _Bitbucket: http://bitbucket.org/danjac/flask-mail

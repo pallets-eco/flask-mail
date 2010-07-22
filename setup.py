@@ -9,7 +9,7 @@ from setuptools import setup
 
 
 setup(
-    name='Flask-Mail',
+    name='flask-mail',
     version='0.3',
     url='http://bitbucket.org/danjac/flask-mail',
     license='BSD',
