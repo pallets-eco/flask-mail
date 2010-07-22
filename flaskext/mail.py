@@ -16,9 +16,7 @@ from flask import _request_ctx_stack
 from lamson.server import Relay
 from lamson.mail import MailResponse
 
-
 class BadHeaderError(Exception): pass
-
 
 class Connection(object):
 
@@ -36,7 +34,7 @@ class Connection(object):
         # if send_many, create a permanent connection to the host
 
         if self.send_many and not self.testing:
-            self.host = self.relay.configure(self.relay.hostname)
+            self.host = self.relay.configure_relay(self.relay.hostname)
         else:
             self.host = None
         
