@@ -1,4 +1,7 @@
-Flask-mail provides simple integration using Lamson.
+Flask-Mail is a Flask extension providing simple email sending 
+capabilities.
 
-See Sphinx docs for full documentation.
+See documentation for full information on installing and using
+Flask-Mail:
 
+http://packages.python.org/Flask-Mail

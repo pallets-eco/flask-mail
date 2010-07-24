@@ -1,15 +1,21 @@
 """
-flask-mail
+Flask-Mail
 ----------
 
 A Flask extension for sending email. 
 
+Links
+`````
+
+* `documentation <http://packages.python.org/Flask-Mail>`_
+* `development version
+  <http://bitbucket.org/danjac/flask-mail/get/tip.gz#egg=Flask-Mail-dev>`_
 """
 from setuptools import setup
 
 
 setup(
-    name='flask-mail',
+    name='Flask-Mail',
     version='0.3.1',
     url='http://bitbucket.org/danjac/flask-mail',
     license='BSD',
