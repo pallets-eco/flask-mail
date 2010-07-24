@@ -10,7 +10,7 @@ from setuptools import setup
 
 setup(
     name='flask-mail',
-    version='0.3',
+    version='0.3.1',
     url='http://bitbucket.org/danjac/flask-mail',
     license='BSD',
     author='Dan Jacob',
@@ -19,11 +19,15 @@ setup(
     long_description=__doc__,
     packages=['flaskext'],
     namespace_packages=['flaskext'],
+    test_suite='nose.collector',
     zip_safe=False,
     platforms='any',
     install_requires=[
         'Flask',
         'Lamson',
+    ],
+    tests_require=[
+        'nose',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
