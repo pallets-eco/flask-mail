@@ -2,7 +2,9 @@
 Flask-Mail
 ----------
 
-A Flask extension for sending email. 
+A Flask extension for sending email messages.
+
+Please refer to the online documentation for details.
 
 Links
 `````

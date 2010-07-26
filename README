@@ -1,7 +1,7 @@
 Flask-Mail is a Flask extension providing simple email sending 
 capabilities.
 
-See documentation for full information on installing and using
-Flask-Mail:
+
+For full information please refer to the online docs:
 
 http://packages.python.org/Flask-Mail
