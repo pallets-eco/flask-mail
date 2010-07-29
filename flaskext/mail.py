@@ -8,7 +8,6 @@
     :copyright: (c) 2010 by Dan Jacob.
     :license: BSD, see LICENSE for more details.
 """
-from __future__ import absolute_import
 from __future__ import with_statement
 
 from flask import _request_ctx_stack
