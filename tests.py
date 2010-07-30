@@ -5,7 +5,7 @@ from __future__ import with_statement
 import unittest
 
 from flask import Flask, g
-from flaskext.mail import Mail, Message, BadHeaderError
+from flaskext.mail import Mail, Message, BadHeaderError, Attachment
 
 class TestCase(unittest.TestCase):
 
@@ -67,8 +67,6 @@ class TestMessage(TestCase):
         msg = Message(subject="testing",
                       sender=("tester", "tester@example.com"))
 
-
-
     
     def test_send_without_sender(self):
 
@@ -128,14 +126,15 @@ class TestMessage(TestCase):
                       body="testing")
         
         msg.attach(data="this is a test", 
-                   content_type="text/html")
+                   content_type="text/plain")
         
-        print msg.attachments
 
-        assert msg.attachments[0] == (None, 
-                                      "text/html",
-                                      "this is a test",
-                                      None)
+        a = msg.attachments[0]
+        
+        assert a.filename is None
+        assert a.disposition is None
+        assert a.content_type == "text/plain"
+        assert a.data == "this is a test"
  
     def test_bad_header_subject(self):
 
@@ -166,24 +165,65 @@ class TestMessage(TestCase):
 
         self.assertRaises(BadHeaderError, self.mail.send, msg)
 
+class TestMail(TestCase):
+
+    def test_send(self):
+
+        msg = Message(subject="testing",
+                      recipients=["tester@example.com"],
+                      body="test")
+
+        self.mail.send(msg)
+
+        assert len(g.outbox) == 1 
+
+    def test_send_message(self):
+
+        self.mail.send_message(subject="testing",
+                               recipients=["tester@example.com"],
+                               body="test")
+
+        assert len(g.outbox) == 1
+
+        msg = g.outbox[0]
+
+        assert msg.subject == "testing"
+        assert msg.recipients == ["tester@example.com"]
+        assert msg.body == "test"
+
+
 class TestConnection(TestCase):
 
+    def test_send_message(self):
+
+        with self.mail.connect() as conn:
+            conn.send_message(subject="testing",
+                              recipients=["to@example.com"],
+                              body="testing")
+
+        assert len(g.outbox) == 1
+
     def test_send_single(self):
-        pass
+
+        with self.mail.connect() as conn:
+            msg = Message(subject="testing",
+                          recipients=["to@example.com"],
+                          body="testing")
+
+            conn.send(msg)
+
+        assert len(g.outbox) == 1
 
     def test_send_many(self):
         
         messages = []
 
-        assert self.app.config['TESTING']
-
-        with self.app.test_request_context():
-            with self.mail.connect() as connection:
-                for i in xrange(100):
-                    msg = Message(subject="testing",
-                                  recipients=["to@example.com"],
-                                  body="testing")
-            
-                    msg.send(connection)
+        with self.mail.connect() as conn:
+            for i in xrange(100):
+                msg = Message(subject="testing",
+                              recipients=["to@example.com"],
+                              body="testing")
+        
+                conn.send(msg)
 
             assert len(g.outbox) == 100

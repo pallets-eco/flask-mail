@@ -17,6 +17,28 @@ from lamson.mail import MailResponse
 
 class BadHeaderError(Exception): pass
 
+class Attachment(object):
+
+    """
+    Encapsulates file attachment information.
+
+    :versionadded: 0.3.5
+
+    :param filename: filename of attachment
+    :param content_type: file mimetype
+    :param data: the raw file data
+    :param disposition: content-disposition (if any)
+ 
+    """
+
+    def __init__(self, filename=None, content_type=None, data=None, 
+        disposition=None):
+
+        self.filename = filename
+        self.content_type = content_type
+        self.data = data
+        self.disposition = disposition
+ 
 class Connection(object):
 
     """Handles connection to host."""
@@ -65,7 +87,19 @@ class Connection(object):
         else:
             self.relay.deliver(message.get_response())
 
+    def send_message(self, *args, **kwargs):
+        """
+        Shortcut for send(msg). 
+
+        Takes same arguments as Message constructor.
     
+        :versionadded: 0.3.5
+
+        """
+
+        self.send(Message(*args, **kwargs))
+
+
 class Mail(object):
     
     """
@@ -119,6 +153,17 @@ class Mail(object):
         with self.connect(send_many=False) as connection:
             message.send(connection)
 
+    def send_message(self, *args, **kwargs):
+        """
+        Shortcut for send(msg). 
+
+        Takes same arguments as Message constructor.
+    
+        :versionadded: 0.3.5
+        """
+
+        self.send(Message(*args, **kwargs))
+
     def connect(self, send_many=True):
         """
         Opens a connection to the mail host.
@@ -140,13 +185,15 @@ class Message(object):
     :param body: plain text message
     :param html: HTML message
     :param sender: email sender address, or **DEFAULT_MAIL_SENDER** by default
+    :param attachments: list of Attachment instances
     """
 
     def __init__(self, subject, 
                  recipients=None, 
                  body=None, 
                  html=None, 
-                 sender=None):
+                 sender=None,
+                 attachments=None):
 
 
         if sender is None:
@@ -167,7 +214,10 @@ class Message(object):
 
         self.recipients = list(recipients)
         
-        self.attachments = []
+        if attachments is None:
+            attachments = []
+
+        self.attachments = attachments
 
     def get_response(self):
         """
@@ -180,9 +230,12 @@ class Message(object):
                                 Body=self.body,
                                 Html=self.html)
 
-        for filename, content_type, data, disp in self.attachments:
+        for attachment in self.attachments:
 
-            response.attach(filename, content_type, data, disp)
+            response.attach(attachment.filename, 
+                            attachment.content_type, 
+                            attachment.data, 
+                            attachment.disposition)
 
         return response
     
@@ -235,8 +288,6 @@ class Message(object):
         :param disposition: content-disposition (if any)
         """
 
-        self.attachments.append((filename, 
-                                 content_type, 
-                                 data, 
-                                 disposition))
+        self.attachments.append(
+            Attachment(filename, content_type, data, disposition))
 

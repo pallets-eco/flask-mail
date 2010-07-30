@@ -174,12 +174,14 @@ API
 ---
 
 .. module:: flaskext.mail
-
+ 
 .. autoclass:: Mail
-   :members: send, connect
+   :members: send, connect, send_message
+
+.. autoclass:: Attachment
 
 .. autoclass:: Connection
-   :members: send
+   :members: send, send_message
 
 .. autoclass:: Message
    :members: attach, add_recipient
