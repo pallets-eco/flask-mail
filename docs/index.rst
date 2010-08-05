@@ -51,7 +51,7 @@ options (each is explained later in the documentation):
 
 * **DEFAULT_MAIL_SENDER** : default **None**
 
-In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Nail**
+In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Mail**
 in unit tests (see below).
 
 Emails are managed through a ``Mail`` instance::
