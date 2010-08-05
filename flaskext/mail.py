@@ -195,8 +195,8 @@ class Mail(object):
 
     def send(self, message):
         """
-        Sends a single message instance. If TESTING then
-        will add the message to **g.outbox**.
+        Sends a single message instance. If TESTING is True
+        the message will not actually be sent.
 
         :param message: a Message instance.
         """

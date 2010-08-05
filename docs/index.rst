@@ -168,6 +168,7 @@ method::
                           recipients=emails)
 
         assert len(outbox) == 1
+        assert outbox[0].subject == "testing"
 
 The **outbox** is a list of ``Message`` instances sent. 
 
