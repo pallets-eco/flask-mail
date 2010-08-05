@@ -172,6 +172,8 @@ method::
 
 The **outbox** is a list of ``Message`` instances sent. 
 
+The blinker package must be installed for this method to work.
+
 Note that the older way of doing things, appending the **outbox** to 
 the ``g`` object, is now deprecated. 
 
