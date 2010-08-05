@@ -36,6 +36,7 @@ setup(
     ],
     tests_require=[
         'nose',
+        'blinker',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

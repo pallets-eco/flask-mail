@@ -17,6 +17,8 @@ class TestCase(unittest.TestCase):
         self.app = Flask(__name__)
         self.app.config.from_object(self)
         
+        assert self.app.testing
+
         self.mail = Mail(self.app)
 
         self.ctx = self.app.test_request_context()
@@ -107,17 +109,19 @@ class TestMessage(TestCase):
         self.app.config['TESTING'] = False
         self.mail.init_app(self.app)
 
-        msg = Message(subject="testing",
-                      recipients=["to@example.com"],
-                      body="testing")
+        with self.mail.record_messages() as outbox:
 
-        self.mail.send(msg)
+            msg = Message(subject="testing",
+                          recipients=["to@example.com"],
+                          body="testing")
+
+            self.mail.send(msg)
+            
+            assert len(outbox) == 1
         
         self.app.config['TESTING'] = True
-        try:
-            assert False, g.outbox
-        except AttributeError:
-            pass
+        
+            
     
     def test_attach(self):
 
@@ -169,61 +173,66 @@ class TestMail(TestCase):
 
     def test_send(self):
 
-        msg = Message(subject="testing",
-                      recipients=["tester@example.com"],
-                      body="test")
+        with self.mail.record_messages() as outbox:
+            msg = Message(subject="testing",
+                          recipients=["tester@example.com"],
+                          body="test")
 
-        self.mail.send(msg)
+            self.mail.send(msg)
 
-        assert len(g.outbox) == 1 
+            assert len(outbox) == 1 
 
     def test_send_message(self):
 
-        self.mail.send_message(subject="testing",
-                               recipients=["tester@example.com"],
-                               body="test")
+        with self.mail.record_messages() as outbox:
+            self.mail.send_message(subject="testing",
+                                   recipients=["tester@example.com"],
+                                   body="test")
 
-        assert len(g.outbox) == 1
+            assert len(outbox) == 1
 
-        msg = g.outbox[0]
+            msg = outbox[0]
 
-        assert msg.subject == "testing"
-        assert msg.recipients == ["tester@example.com"]
-        assert msg.body == "test"
+            assert msg.subject == "testing"
+            assert msg.recipients == ["tester@example.com"]
+            assert msg.body == "test"
 
 
 class TestConnection(TestCase):
 
     def test_send_message(self):
 
-        with self.mail.connect() as conn:
-            conn.send_message(subject="testing",
-                              recipients=["to@example.com"],
-                              body="testing")
+        with self.mail.record_messages() as outbox:
+            with self.mail.connect() as conn:
+                conn.send_message(subject="testing",
+                                  recipients=["to@example.com"],
+                                  body="testing")
 
-        assert len(g.outbox) == 1
+            assert len(outbox) == 1
 
     def test_send_single(self):
 
-        with self.mail.connect() as conn:
-            msg = Message(subject="testing",
-                          recipients=["to@example.com"],
-                          body="testing")
+        with self.mail.record_messages() as outbox:
+            with self.mail.connect() as conn:
+                msg = Message(subject="testing",
+                              recipients=["to@example.com"],
+                              body="testing")
 
-            conn.send(msg)
+                conn.send(msg)
 
-        assert len(g.outbox) == 1
+            assert len(outbox) == 1
 
     def test_send_many(self):
         
         messages = []
 
-        with self.mail.connect() as conn:
-            for i in xrange(100):
-                msg = Message(subject="testing",
-                              recipients=["to@example.com"],
-                              body="testing")
+        with self.mail.record_messages() as outbox:
+            with self.mail.connect() as conn:
+                for i in xrange(100):
+                    msg = Message(subject="testing",
+                                  recipients=["to@example.com"],
+                                  body="testing")
         
-                conn.send(msg)
+                    conn.send(msg)
 
-            assert len(g.outbox) == 100
+            assert len(outbox) == 100

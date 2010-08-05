@@ -15,6 +15,16 @@ from flask import _request_ctx_stack
 from lamson.server import Relay
 from lamson.mail import MailResponse
 
+from contextlib import contextmanager
+
+try:
+    import blinker
+    signals = blinker.Namespace()
+    email_dispatched = signals.signal("email-dispatched")
+    use_signals = True
+except ImportError:
+    use_signals = False
+
 class BadHeaderError(Exception): pass
 
 class Attachment(object):
@@ -43,11 +53,12 @@ class Connection(object):
 
     """Handles connection to host."""
 
-    def __init__(self, mail, testing=False, send_many=False):
+    def __init__(self, mail, send_many=False):
 
         self.mail = mail
-        self.relay = mail.relay
-        self.testing = testing
+        self.app = self.mail.app
+        self.relay = self.mail.relay
+        self.testing = self.mail.testing
         self.send_many = send_many
 
     def __enter__(self):
@@ -66,7 +77,14 @@ class Connection(object):
             self.host.quit()
 
     def send_test_mail(self, message):
+        """
+        This will be deprecated. It's difficult to get a handle
+        on the outbox inside of a tested view. 
 
+        Instead use ``record_messages``
+
+        :deprecated:
+        """
         outbox = getattr(_request_ctx_stack.top.g, 'outbox', [])
         outbox.append(message)
 
@@ -86,6 +104,9 @@ class Connection(object):
                                str(message.get_response()))
         else:
             self.relay.deliver(message.get_response())
+        
+        if use_signals:
+            email_dispatched.send(message, app=self.app)
 
     def send_message(self, *args, **kwargs):
         """
@@ -139,8 +160,38 @@ class Mail(object):
             use_ssl, use_tls, debug)
 
         self.testing = app.config['TESTING']
-
+        
         self.app = app
+
+    @contextmanager
+    def record_messages(self):
+        """
+        Records all messages. Use in unit tests for example::
+            
+            with mail.record_messages() as outbox:
+                response = app.test_client.get("/email-sending-view/")
+                assert len(outbox) == 1
+                assert outbox[0].subject == "testing"
+
+        You must have blinker installed in order to use this feature.
+        :versionadded: 0.4
+
+        """
+
+        if not use_signals:
+            raise RuntimeError, "blinker must be installed"
+        
+        outbox = []
+
+        def _record(message, app):
+            outbox.append(message)
+        
+        email_dispatched.connect(_record)
+
+        try:
+            yield outbox
+        finally:
+            email_dispatched.disconnect(_record)
 
     def send(self, message):
         """
@@ -170,10 +221,8 @@ class Mail(object):
         
         :param send_many: keep connection alive
         """
-        return Connection(self, 
-                          send_many=send_many, 
-                          testing=self.testing)
-
+        return Connection(self, send_many=send_many) 
+                          
 
 class Message(object):
     
