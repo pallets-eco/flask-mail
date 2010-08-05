@@ -153,22 +153,50 @@ environment, it's useful to be able to suppress email sending.
 
 If the setting ``TESTING`` is set to ``True``, emails will be
 suppressed. Calling ``send()`` on your messages will not result in 
-any messages being sent.
+any messages being actually sent.
 
-However, it's still useful to track in  your unit tests which 
-emails have been sent.
+However, it's still useful to keep track of emails that would have been 
+sent when you are writing unit tests.
 
-When ``TESTING`` is on, an ``outbox`` list is attached to the
-thread local ``g`` object, so you can then inspect what emails are sent
-(or would be sent in production mode)::
+In order to keep track of dispatched emails, use the ``record_messages``
+method::
 
-    assert g.outbox[0].subject == "testing"
+    with mail.record_messages() as outbox:
+        
+        mail.send_message(subject='testing',
+                          body='test',
+                          recipients=emails)
+
+        assert len(outbox) == 1
+
+The **outbox** is a list of ``Message`` instances sent. 
+
+Note that the older way of doing things, appending the **outbox** to 
+the ``g`` object, is now deprecated. 
+
 
 Header injection
 ----------------
 
 To prevent `header injection <http://www.nyphp.org/PHundamentals/8_Preventing-Email-Header-Injection>`_ attempts to send
 a message with newlines in the subject, sender or recipient addresses will result in a ``BadHeaderError``.
+
+Signalling support
+------------------
+
+.. versionadded:: 0.4
+
+**Flask-Mail** now provides signalling support through a ``email_dispatched`` signal. This is sent whenever an email is
+dispatched (even if the email is not actually sent, i.e. in a testing environment).
+
+A function connecting to the ``email_dispatched`` signal takes a ``Message`` instance as a first argument, and the Flask
+app instance as an optional argument::
+
+    def log_message(message, app):
+        app.logger.debug(message.subject)
+
+    email_dispatched.connect(log_message)
+
 
 API
 ---
