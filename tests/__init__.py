@@ -135,6 +135,16 @@ class TestMessage(TestCase):
 
         encoded = msg.encoded()
 
+    def test_to_base(self):
+
+        msg = Message(subject="testing",
+                      recipients=["to@example.com"],
+                      body="testing")
+
+        base = msg.to_base()
+
+        assert False, base.headers
+
     def test_attach(self):
 
         msg = Message(subject="testing",
