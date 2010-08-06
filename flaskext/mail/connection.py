@@ -16,8 +16,6 @@ class Connection(object):
 
     def __enter__(self):
 
-        # if send_many, create a permanent connection to the host
-
         if self.testing:
             self.host = None
         else:
