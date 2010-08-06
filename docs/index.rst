@@ -11,6 +11,15 @@ The **Flask-Mail** extension provides a simple interface to set up SMTP with you
 
 Source code and issue tracking at `Bitbucket`_.
 
+Windows issues
+--------------
+
+**Flask-Mail** requires the use of the **Lamson** library, which unfortunately
+has dependencies that do not work on Windows.
+
+It is therefore recommended that you use the `--no-dependencies` option to first
+install Lamson, and do the same again to install **Flask-Mail**.
+
 Installing Flask-Mail
 ---------------------
 
