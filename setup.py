@@ -28,9 +28,6 @@ setup(
     packages=[
         'flaskext',
         'flaskext.mail',
-        'flaskext.mail.encoding',
-        'flaskext.mail.message',
-        'flaskext.mail.connection',
     ],
     namespace_packages=['flaskext'],
     test_suite='nose.collector',
@@ -38,7 +35,6 @@ setup(
     platforms='any',
     install_requires=[
         'Flask',
-        'Lamson',
     ],
     tests_require=[
         'nose',
