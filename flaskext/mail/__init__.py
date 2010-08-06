@@ -10,10 +10,12 @@
 """
 from __future__ import with_statement
 
-from flask import _request_ctx_stack
+import smtplib
 
 from lamson.server import Relay
 from lamson.mail import MailResponse
+
+from flask import _request_ctx_stack
 
 from contextlib import contextmanager
 
@@ -49,61 +51,58 @@ class Attachment(object):
         self.data = data
         self.disposition = disposition
  
+
 class Connection(object):
 
     """Handles connection to host."""
 
-    def __init__(self, mail, send_many=False):
+    def __init__(self, mail):
 
         self.mail = mail
         self.app = self.mail.app
-        self.relay = self.mail.relay
-        self.testing = self.mail.testing
-        self.send_many = send_many
+        self.testing = self.app.testing
 
     def __enter__(self):
 
         # if send_many, create a permanent connection to the host
 
-        if self.send_many and not self.testing:
-            self.host = self.relay.configure_relay(self.relay.hostname)
-        else:
+        if self.testing:
             self.host = None
+        else:
+            self.host = self.configure_host()
         
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
         if self.host:
             self.host.quit()
-
-    def send_test_mail(self, message):
-        """
-        This will be deprecated. It's difficult to get a handle
-        on the outbox inside of a tested view. 
-
-        Instead use ``record_messages``
-
-        :deprecated:
-        """
-        outbox = getattr(_request_ctx_stack.top.g, 'outbox', [])
-        outbox.append(message)
-
-        _request_ctx_stack.top.g.outbox = outbox
     
+    def configure_host(self):
+        
+        if self.mail.use_ssl:
+            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
+        else:
+            host = smtplib.SMTP(self.mail.server, self.mail.port)
+
+        host.set_debuglevel(int(self.app.debug))
+
+        if self.mail.use_tls:
+            host.starttls()
+        if self.mail.username and self.mail.password:
+            host.login(self.mail.username, self.mail.password)
+
+        return host
+
     def send(self, message):
         """
         Sends message.
         
         :param message: Message instance.
         """
-        if self.testing:
-            self.send_test_mail(message)
-        elif self.host:
+        if self.host:
             self.host.sendmail(message.sender,
                                message.recipients,
                                str(message.get_response()))
-        else:
-            self.relay.deliver(message.get_response())
         
         if use_signals:
             email_dispatched.send(message, app=self.app)
@@ -148,18 +147,14 @@ class Mail(object):
         :param app: Flask application instance
         """
 
-        server = app.config.get('MAIL_SERVER', '127.0.0.1')
-        username = app.config.get('MAIL_USERNAME')
-        password = app.config.get('MAIL_PASSWORD')
-        port = app.config.get('MAIL_PORT', 25)
-        use_tls = app.config.get('MAIL_USE_TLS', False)
-        use_ssl = app.config.get('MAIL_USE_SSL', False)
-        debug = int(app.config.get('MAIL_DEBUG', app.debug))
-    
-        self.relay = self.relay_class(server, port, username, password,
-            use_ssl, use_tls, debug)
-
-        self.testing = app.config['TESTING']
+        self.server = app.config.get('MAIL_SERVER', '127.0.0.1')
+        self.username = app.config.get('MAIL_USERNAME')
+        self.password = app.config.get('MAIL_PASSWORD')
+        self.port = app.config.get('MAIL_PORT', 25)
+        self.use_tls = app.config.get('MAIL_USE_TLS', False)
+        self.use_ssl = app.config.get('MAIL_USE_SSL', False)
+        self.debug = int(app.config.get('MAIL_DEBUG', app.debug))
+        self.testing = app.testing
         
         self.app = app
 
@@ -201,7 +196,7 @@ class Mail(object):
         :param message: a Message instance.
         """
 
-        with self.connect(send_many=False) as connection:
+        with self.connect() as connection:
             message.send(connection)
 
     def send_message(self, *args, **kwargs):
@@ -215,13 +210,11 @@ class Mail(object):
 
         self.send(Message(*args, **kwargs))
 
-    def connect(self, send_many=True):
+    def connect(self):
         """
         Opens a connection to the mail host.
-        
-        :param send_many: keep connection alive
         """
-        return Connection(self, send_many=send_many) 
+        return Connection(self) 
                           
 
 class Message(object):
