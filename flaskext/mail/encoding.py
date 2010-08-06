@@ -28,7 +28,8 @@ def header_to_mime_encoding(value, not_email=False):
 
     encoder = Charset(DEFAULT_ENCODING)
     if type(value) == list:
-        return "; ".join(properly_encode_header(v, encoder, not_email) for v in value)
+        return "; ".join(properly_encode_header(
+            v, encoder, not_email) for v in value)
     else:
         return properly_encode_header(value, encoder, not_email)
 
@@ -57,45 +58,6 @@ def properly_encode_header(value, encoder, not_email):
         return encoder.header_encode(value.encode("utf-8"))
 
 
-def to_message(mail):
-    """
-    Given a MailBase message, this will construct a MIMEPart 
-    that is canonicalized for use with the Python email API.
-    """
-    ctype, params = mail.content_encoding['Content-Type']
-
-    if not ctype:
-        if mail.parts:
-            ctype = 'multipart/mixed'
-        else:
-            ctype = 'text/plain'
-    else:
-        if mail.parts:
-            assert ctype.startswith("multipart") or ctype.startswith("message"), "Content type should be multipart or message, not %r" % ctype
-
-    # adjust the content type according to what it should be now
-    mail.content_encoding['Content-Type'] = (ctype, params)
-
-    try:
-        out = MIMEPart(ctype, **params)
-    except TypeError, exc:
-        raise EncodingError("Content-Type malformed, not allowed: %r; %r (Python ERROR: %s" %
-                            (ctype, params, exc.message))
-
-    for k in mail.keys():
-        if k in ADDRESS_HEADERS_WHITELIST:
-            out[k.encode('ascii')] = header_to_mime_encoding(mail[k])
-        else:
-            out[k.encode('ascii')] = header_to_mime_encoding(mail[k], not_email=True)
-
-    out.extract_payload(mail)
-
-    # go through the children
-    for part in mail.parts:
-        out.attach(to_message(part))
-
-    return out
-
 class MIMEPart(MIMEBase):
     """
     A reimplementation of nearly everything in email.mime to be more useful
@@ -118,14 +80,15 @@ class MIMEPart(MIMEBase):
 
         self.set_payload(encoded, charset=charset)
 
-
     def extract_payload(self, mail):
         if mail.body == None: return  # only None, '' is still ok
 
         ctype, ctype_params = mail.content_encoding['Content-Type']
         cdisp, cdisp_params = mail.content_encoding['Content-Disposition']
 
-        assert ctype, "Extract payload requires that mail.content_encoding have a valid Content-Type."
+        assert ctype, """
+            Extract payload requires that 
+            mail.content_encoding have a valid Content-Type."""
 
         if ctype.startswith("text/"):
             self.add_text(mail.body)
@@ -138,9 +101,12 @@ class MIMEPart(MIMEBase):
             encoders.encode_base64(self)
 
     def __repr__(self):
-        return "<MIMEPart '%s/%s': %r, %r, multipart=%r>" % (self.subtype, self.maintype, self['Content-Type'],
-                                              self['Content-Disposition'],
-                                                            self.is_multipart())
+        return "<MIMEPart '%s/%s': %r, %r, multipart=%r>" % \
+                (self.subtype, 
+                 self.maintype, 
+                 self['Content-Type'],
+                 self['Content-Disposition'],
+                 self.is_multipart())
 
 
 class MailBase(object):
@@ -209,8 +175,45 @@ class MailBase(object):
         part.content_encoding['Content-Type'] = (ctype, {})
         self.parts.append(part)
 
-    def walk(self):
-        for p in self.parts:
-            yield p
-            for x in p.walk():
-                yield x
+    def to_message(self):
+        """
+        This will construct a MIMEPart that is canonicalized for 
+        use with the Python email API.
+        """
+        ctype, params = self.content_encoding['Content-Type']
+
+        if not ctype:
+            if self.parts:
+                ctype = 'multipart/mixed'
+            else:
+                ctype = 'text/plain'
+        else:
+            if self.parts:
+                assert ctype.startswith("multipart") or \
+                    ctype.startswith("message"), \
+                    "Content type should be multipart or message, not %r" % ctype
+
+        # adjust the content type according to what it should be now
+        self.content_encoding['Content-Type'] = (ctype, params)
+
+        try:
+            out = MIMEPart(ctype, **params)
+        except TypeError, exc:
+            raise EncodingError("Content-Type malformed, not allowed: %r; "
+                                "%r (Python ERROR: %s" % (ctype, params, exc.message))
+
+        for k in self.keys():
+            if k in ADDRESS_HEADERS_WHITELIST:
+                out[k.encode('ascii')] = header_to_mime_encoding(self[k])
+            else:
+                out[k.encode('ascii')] = \
+                    header_to_mime_encoding(self[k], not_email=True)
+
+        out.extract_payload(self)
+
+        # go through the children
+        for part in self.parts:
+            out.attach(part.to_message())
+
+        return out
+

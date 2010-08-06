@@ -100,11 +100,9 @@ class Message(object):
 
     def encoded(self):
 
-        recipients = ','.join(self.recipients)
-
         base = encoding.MailBase((('Subject', self.subject),
                                    ('From', self.sender),
-                                   ('To', recipients)))
+                                   ('To', self.recipients)))
 
         if self.body and self.html:
             base.content_encoding['Content-Type'] = \
@@ -134,7 +132,7 @@ class Message(object):
             base.body = self.html
             base.content_encoding['Content-Type'] = ('text/html', {})
 
-        return encoding.to_message(base)
+        return base.to_message()
     
     def is_bad_headers(self):
         """
