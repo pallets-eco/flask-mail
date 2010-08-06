@@ -3,9 +3,15 @@
 from __future__ import with_statement
 
 import unittest
+import mailbox
+
+from email import encoders
 
 from flask import Flask, g
+from flaskext.mail import encoding
 from flaskext.mail import Mail, Message, BadHeaderError, Attachment
+
+from nose.tools import assert_equal
 
 class TestCase(unittest.TestCase):
 
@@ -121,8 +127,14 @@ class TestMessage(TestCase):
         
         self.app.config['TESTING'] = True
         
-            
-    
+    def test_encoded(self):
+        
+        msg = Message(subject="testing",
+                      recipients=["to@example.com"],
+                      body="testing")
+
+        encoded = msg.encoded()
+
     def test_attach(self):
 
         msg = Message(subject="testing",
@@ -140,6 +152,8 @@ class TestMessage(TestCase):
         assert a.content_type == "text/plain"
         assert a.data == "this is a test"
  
+        part = a.encoded(msg.to_base())
+
     def test_bad_header_subject(self):
 
         msg = Message(subject="testing\n\r",
@@ -168,6 +182,7 @@ class TestMessage(TestCase):
                       body="testing")
 
         self.assertRaises(BadHeaderError, self.mail.send, msg)
+
 
 class TestMail(TestCase):
 
@@ -236,3 +251,70 @@ class TestConnection(TestCase):
                     conn.send(msg)
 
             assert len(outbox) == 100
+
+
+class TestEncoding(TestCase):
+
+    def test_mailbase(self):
+
+        the_subject = u'p\xf6stal'
+        m = encoding.MailBase()
+        
+        m['To'] = "testing@localhost"
+        m['Subject'] = the_subject
+
+        assert m['To'] == "testing@localhost"
+        assert m['TO'] == m['To']
+        assert m['to'] == m['To']
+
+        assert m['Subject'] == the_subject
+        assert m['subject'] == m['Subject']
+        assert m['sUbjeCt'] == m['Subject']
+        
+        msg = m.to_message()
+        
+        for k in m.keys():
+            assert k in m
+            del m[k]
+            assert not k in m
+
+    def test_MIMEPart(self):
+        text1 = encoding.MIMEPart("text/plain")
+        text1.set_payload("The first payload.")
+        text2 = encoding.MIMEPart("text/plain")
+        text2.set_payload("The second payload.")
+
+        image_data = open("tests/lamson.png").read()
+        img1 = encoding.MIMEPart("image/png")
+        img1.set_payload(image_data)
+        img1.set_param('attachment','', header='Content-Disposition')
+        img1.set_param('filename','lamson.png', header='Content-Disposition')
+        encoders.encode_base64(img1)
+        
+        multi = encoding.MIMEPart("multipart/mixed")
+        for x in [text1, text2, img1]:
+            multi.attach(x)
+
+    def test_attach_text(self):
+        mail = encoding.MailBase()
+        mail.attach_text("This is some text.", 'text/plain')
+
+        msg = mail.to_message()
+        assert msg.get_payload(0).get_payload() == "This is some text."
+
+        mail.attach_text("<html><body><p>Hi there.</p></body></html>", "text/html")
+        msg = mail.to_message()
+        assert len(msg.get_payload()) == 2
+
+
+    def test_attach_file(self):
+        mail = encoding.MailBase()
+        png = open("tests/lamson.png").read()
+        mail.attach_file("lamson.png", png, "image/png", "attachment")
+        msg = mail.to_message()
+
+        payload = msg.get_payload(0)
+        assert payload.get_payload(decode=True) == png
+        assert payload.get_filename() == "lamson.png", payload.get_filename()
+
+    

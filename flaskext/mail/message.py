@@ -98,7 +98,10 @@ class Message(object):
         self.attachments = attachments
 
 
-    def encoded(self):
+    def to_base(self):
+        """
+        Creates an encoding.MailBase instance.
+        """
 
         base = encoding.MailBase((('Subject', self.subject),
                                    ('From', self.sender),
@@ -132,7 +135,10 @@ class Message(object):
             base.body = self.html
             base.content_encoding['Content-Type'] = ('text/html', {})
 
-        return base.to_message()
+        return base
+
+    def encoded(self):
+        return self.to_base().to_message()
     
     def is_bad_headers(self):
         """
