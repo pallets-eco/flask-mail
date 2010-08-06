@@ -35,6 +35,7 @@ setup(
     platforms='any',
     install_requires=[
         'Flask',
+        'Lamson',
     ],
     tests_require=[
         'nose',
