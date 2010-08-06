@@ -12,7 +12,7 @@ class Connection(object):
         self.mail = mail
         self.app = self.mail.app
         self.testing = self.app.testing
-        self.max_emails = max_emails or self.mail.max_emails
+        self.max_emails = max_emails or self.mail.max_emails or 0
 
     def __enter__(self):
 
