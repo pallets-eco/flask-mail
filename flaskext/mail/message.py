@@ -1,9 +1,10 @@
 
 from flask import _request_ctx_stack
 
-from lamson.mail import MailResponse
+from flaskext.mail import encoding
 
 class BadHeaderError(Exception): pass
+
 
 class Attachment(object):
 
@@ -20,13 +21,37 @@ class Attachment(object):
     """
 
     def __init__(self, filename=None, content_type=None, data=None, 
-        disposition=None):
+        disposition=None, part=None):
 
         self.filename = filename
         self.content_type = content_type
         self.data = data
-        self.disposition = disposition
- 
+        self.disposition = disposition or 'attachment'
+        self.part = part
+
+    def encoded(self, base):
+        """
+        Used internally to take the attachments mentioned in self.attachments
+        and do the actual encoding in a lazy way when you call to_message.
+        """
+        if self.part:
+            base.parts.append(self.part)
+        elif self.filename:
+            if not self.data:
+                data = open(self.filename).read()
+
+            base.attach_file(self.filename, 
+                             self.data, 
+                             self.content_type, 
+                             self.disposition)
+        else:
+            base.attach_text(self.data, self.content_type)
+
+        ctype = base.content_encoding['Content-Type'][0]
+
+        if ctype and not ctype.startswith('multipart'):
+            base.content_encoding['Content-Type'] = ('multipart/mixed', {})
+
 
 class Message(object):
     
@@ -72,25 +97,44 @@ class Message(object):
 
         self.attachments = attachments
 
-    def get_response(self):
-        """
-        Creates a Lamson MailResponse instance
-        """
 
-        response = MailResponse(Subject=self.subject, 
-                                To=self.recipients,
-                                From=self.sender,
-                                Body=self.body,
-                                Html=self.html)
+    def encoded(self):
 
-        for attachment in self.attachments:
+        recipients = ','.join(self.recipients)
 
-            response.attach(attachment.filename, 
-                            attachment.content_type, 
-                            attachment.data, 
-                            attachment.disposition)
+        base = encoding.MailBase((('Subject', self.subject),
+                                   ('From', self.sender),
+                                   ('To', recipients)))
 
-        return response
+        if self.body and self.html:
+            base.content_encoding['Content-Type'] = \
+                ('multipart/alternative', {})
+            
+            multipart = True
+        else:
+            multipart = bool(self.attachments)
+
+        if multipart:
+
+            base.body = None
+            if self.body:
+                base.attach_text(self.body, 'text/plain')
+
+            if self.html:
+                self.base.attach_text(self.html, 'text/html')
+
+            for attachment in self.attachments:
+                attachment.encoded(base)
+
+        elif self.body:
+            base.body = self.body
+            base.content_encoding['Content-Type'] = ('text/plain', {})
+
+        elif self.html:
+            base.body = self.html
+            base.content_encoding['Content-Type'] = ('text/html', {})
+
+        return encoding.to_message(base)
     
     def is_bad_headers(self):
         """

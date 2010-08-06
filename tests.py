@@ -136,7 +136,7 @@ class TestMessage(TestCase):
         a = msg.attachments[0]
         
         assert a.filename is None
-        assert a.disposition is None
+        assert a.disposition == 'attachment'
         assert a.content_type == "text/plain"
         assert a.data == "this is a test"
  

@@ -7,11 +7,12 @@ class Connection(object):
 
     """Handles connection to host."""
 
-    def __init__(self, mail):
+    def __init__(self, mail, max_emails=None):
 
         self.mail = mail
         self.app = self.mail.app
         self.testing = self.app.testing
+        self.max_emails = max_emails or self.mail.max_emails
 
     def __enter__(self):
 
@@ -22,11 +23,15 @@ class Connection(object):
         else:
             self.host = self.configure_host()
         
+        self.num_emails = 0
+
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
         if self.host:
             self.host.quit()
+
+        self.num_emails = 0
     
     def configure_host(self):
         
@@ -50,13 +55,20 @@ class Connection(object):
         
         :param message: Message instance.
         """
+        self.num_emails += 1
+
         if self.host:
             self.host.sendmail(message.sender,
                                message.recipients,
-                               str(message.get_response()))
+                               str(message.encoded()))
         
+            if self.num_emails >= self.max_emails:
+                
+                self.host = self.configure_host()
+
         if email_dispatched:
             email_dispatched.send(message, app=self.app)
+
 
     def send_message(self, *args, **kwargs):
         """
