@@ -30,8 +30,6 @@ class Connection(object):
     def __exit__(self, exc_type, exc_value, tb):
         if self.host:
             self.host.quit()
-
-        self.num_emails = 0
     
     def configure_host(self):
         
@@ -71,6 +69,7 @@ class Connection(object):
             
             self.num_emails = 0
             if self.host:
+                self.host.quit()
                 self.host = self.configure_host()
 
     def send_message(self, *args, **kwargs):
