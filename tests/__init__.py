@@ -61,7 +61,6 @@ class TestMessage(TestCase):
 
         assert len(msg.recipients) == 0
 
-
     def test_add_recipient(self):
 
         msg = Message("testing")
@@ -143,7 +142,28 @@ class TestMessage(TestCase):
 
         base = msg.to_base()
 
-        assert False, base.headers
+        assert base.headers['Subject'] == "testing"
+        assert base.headers['To'] == ['to@example.com']
+        assert base.headers['From'] == 'support@mysite.com'
+        
+        assert base.body == "testing"
+        assert base.content_encoding['Content-Type'][0] == 'text/plain'
+
+    def test_to_base_html(self):
+
+        msg = Message(subject="testing",
+                      recipients=["to@example.com"],
+                      body="testing",
+                      html="<b>testing</b>")
+
+        base = msg.to_base()
+
+        assert base.headers['Subject'] == "testing"
+        assert base.headers['To'] == ['to@example.com']
+        assert base.headers['From'] == 'support@mysite.com'
+        
+        assert base.body is None
+        assert base.content_encoding['Content-Type'][0] == 'multipart/alternative'
 
     def test_attach(self):
 
@@ -262,6 +282,24 @@ class TestConnection(TestCase):
 
             assert len(outbox) == 100
 
+    def test_max_emails(self):
+        
+        messages = []
+
+        with self.mail.record_messages() as outbox:
+            with self.mail.connect(max_emails=10) as conn:
+                for i in xrange(100):
+                    msg = Message(subject="testing",
+                                  recipients=["to@example.com"],
+                                  body="testing")
+        
+                    conn.send(msg)
+
+                    print conn.num_emails
+                    if i % 10 == 0:
+                        assert conn.num_emails == 1
+
+            assert len(outbox) == 100
 
 class TestEncoding(TestCase):
 

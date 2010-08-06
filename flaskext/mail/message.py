@@ -122,7 +122,7 @@ class Message(object):
                 base.attach_text(self.body, 'text/plain')
 
             if self.html:
-                self.base.attach_text(self.html, 'text/html')
+                base.attach_text(self.html, 'text/html')
 
             for attachment in self.attachments:
                 attachment.encoded(base)

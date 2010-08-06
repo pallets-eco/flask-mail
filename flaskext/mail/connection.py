@@ -55,20 +55,23 @@ class Connection(object):
         
         :param message: Message instance.
         """
-        self.num_emails += 1
 
         if self.host:
             self.host.sendmail(message.sender,
                                message.recipients,
                                str(message.encoded()))
         
-            if self.num_emails >= self.max_emails:
-                
-                self.host = self.configure_host()
 
         if email_dispatched:
             email_dispatched.send(message, app=self.app)
 
+        self.num_emails += 1
+
+        if self.num_emails == self.max_emails:
+            
+            self.num_emails = 0
+            if self.host:
+                self.host = self.configure_host()
 
     def send_message(self, *args, **kwargs):
         """
