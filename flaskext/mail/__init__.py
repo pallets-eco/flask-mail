@@ -10,114 +10,11 @@
 """
 from __future__ import with_statement
 
-import smtplib
-
-from lamson.server import Relay
-from lamson.mail import MailResponse
-
-from flask import _request_ctx_stack
-
 from contextlib import contextmanager
 
-try:
-    import blinker
-    signals = blinker.Namespace()
-    email_dispatched = signals.signal("email-dispatched")
-    use_signals = True
-except ImportError:
-    use_signals = False
-
-class BadHeaderError(Exception): pass
-
-class Attachment(object):
-
-    """
-    Encapsulates file attachment information.
-
-    :versionadded: 0.3.5
-
-    :param filename: filename of attachment
-    :param content_type: file mimetype
-    :param data: the raw file data
-    :param disposition: content-disposition (if any)
- 
-    """
-
-    def __init__(self, filename=None, content_type=None, data=None, 
-        disposition=None):
-
-        self.filename = filename
-        self.content_type = content_type
-        self.data = data
-        self.disposition = disposition
- 
-
-class Connection(object):
-
-    """Handles connection to host."""
-
-    def __init__(self, mail):
-
-        self.mail = mail
-        self.app = self.mail.app
-        self.testing = self.app.testing
-
-    def __enter__(self):
-
-        # if send_many, create a permanent connection to the host
-
-        if self.testing:
-            self.host = None
-        else:
-            self.host = self.configure_host()
-        
-        return self
-
-    def __exit__(self, exc_type, exc_value, tb):
-        if self.host:
-            self.host.quit()
-    
-    def configure_host(self):
-        
-        if self.mail.use_ssl:
-            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
-        else:
-            host = smtplib.SMTP(self.mail.server, self.mail.port)
-
-        host.set_debuglevel(int(self.app.debug))
-
-        if self.mail.use_tls:
-            host.starttls()
-        if self.mail.username and self.mail.password:
-            host.login(self.mail.username, self.mail.password)
-
-        return host
-
-    def send(self, message):
-        """
-        Sends message.
-        
-        :param message: Message instance.
-        """
-        if self.host:
-            self.host.sendmail(message.sender,
-                               message.recipients,
-                               str(message.get_response()))
-        
-        if use_signals:
-            email_dispatched.send(message, app=self.app)
-
-    def send_message(self, *args, **kwargs):
-        """
-        Shortcut for send(msg). 
-
-        Takes same arguments as Message constructor.
-    
-        :versionadded: 0.3.5
-
-        """
-
-        self.send(Message(*args, **kwargs))
+from flaskext.mail.connection import Connection
+from flaskext.mail.message import Message, Attachment, BadHeaderError
+from flaskext.mail.signals import email_dispatched
 
 
 class Mail(object):
@@ -128,10 +25,7 @@ class Mail(object):
     :param app: Flask instance
     """
 
-    relay_class = Relay
-
     def __init__(self, app=None):
-        self._relay = None
         
         if app is not None:
             self.init_app(app)
@@ -173,7 +67,7 @@ class Mail(object):
 
         """
 
-        if not use_signals:
+        if not email_dispatched:
             raise RuntimeError, "blinker must be installed"
         
         outbox = []
@@ -216,120 +110,4 @@ class Mail(object):
         """
         return Connection(self) 
                           
-
-class Message(object):
-    
-    """
-    Encapsulates an email message.
-
-    :param subject: email subject header
-    :param recipients: list of email addresses
-    :param body: plain text message
-    :param html: HTML message
-    :param sender: email sender address, or **DEFAULT_MAIL_SENDER** by default
-    :param attachments: list of Attachment instances
-    """
-
-    def __init__(self, subject, 
-                 recipients=None, 
-                 body=None, 
-                 html=None, 
-                 sender=None,
-                 attachments=None):
-
-
-        if sender is None:
-            app = _request_ctx_stack.top.app
-            sender = app.config.get("DEFAULT_MAIL_SENDER")
-
-        if isinstance(sender, tuple):
-            # sender can be tuple of (name, address)
-            sender = "%s <%s>" % sender
-
-        self.subject = subject
-        self.sender = sender
-        self.body = body
-        self.html = html
-
-        if recipients is None:
-            recipients = []
-
-        self.recipients = list(recipients)
-        
-        if attachments is None:
-            attachments = []
-
-        self.attachments = attachments
-
-    def get_response(self):
-        """
-        Creates a Lamson MailResponse instance
-        """
-
-        response = MailResponse(Subject=self.subject, 
-                                To=self.recipients,
-                                From=self.sender,
-                                Body=self.body,
-                                Html=self.html)
-
-        for attachment in self.attachments:
-
-            response.attach(attachment.filename, 
-                            attachment.content_type, 
-                            attachment.data, 
-                            attachment.disposition)
-
-        return response
-    
-    def is_bad_headers(self):
-        """
-        Checks for bad headers i.e. newlines in subject, sender or recipients.
-        """
-       
-        for val in [self.subject, self.sender] + self.recipients:
-            for c in '\r\n':
-                if c in val:
-                    return True
-        return False
-        
-    def send(self, connection):
-        """
-        Verifies and sends the message.
-        """
-        
-        assert self.recipients, "No recipients have been added"
-        assert self.body or self.html, "No body or HTML has been set"
-        assert self.sender, "No sender address has been set"
-
-        if self.is_bad_headers():
-            raise BadHeaderError
-
-        connection.send(self)
-
-    def add_recipient(self, recipient):
-        """
-        Adds another recipient to the message.
-        
-        :param recipient: email address of recipient.
-        """
-        
-        self.recipients.append(recipient)
-
-    def attach(self, 
-               filename=None, 
-               content_type=None, 
-               data=None,
-               disposition=None):
-        
-        """
-        Adds an attachment to the message.
-        
-        :param filename: filename of attachment
-        :param content_type: file mimetype
-        :param data: the raw file data
-        :param disposition: content-disposition (if any)
-        """
-
-        self.attachments.append(
-            Attachment(filename, content_type, data, disposition))
 
