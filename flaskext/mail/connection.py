@@ -39,8 +39,9 @@ class Connection(object):
             else:
                 host = smtplib.SMTP(self.mail.server, self.mail.port)
         except socket.error:
-            if not self.fail_silently:
-                raise
+            if self.fail_silently:
+                return
+            raise
 
         host.set_debuglevel(int(self.app.debug))
 
