@@ -3,9 +3,14 @@
 from __future__ import with_statement
 
 import unittest
+import mailbox
+
+from email import encoders
 
 from flask import Flask, g
 from flaskext.mail import Mail, Message, BadHeaderError, Attachment
+
+from nose.tools import assert_equal
 
 class TestCase(unittest.TestCase):
 
@@ -54,7 +59,6 @@ class TestMessage(TestCase):
         msg3.add_recipient("somebody@here.com")
 
         assert len(msg.recipients) == 0
-
 
     def test_add_recipient(self):
 
@@ -120,9 +124,7 @@ class TestMessage(TestCase):
             assert len(outbox) == 1
         
         self.app.config['TESTING'] = True
-        
-            
-    
+
     def test_attach(self):
 
         msg = Message(subject="testing",
@@ -136,10 +138,11 @@ class TestMessage(TestCase):
         a = msg.attachments[0]
         
         assert a.filename is None
-        assert a.disposition is None
+        assert a.disposition == 'attachment'
         assert a.content_type == "text/plain"
         assert a.data == "this is a test"
  
+
     def test_bad_header_subject(self):
 
         msg = Message(subject="testing\n\r",
@@ -168,6 +171,7 @@ class TestMessage(TestCase):
                       body="testing")
 
         self.assertRaises(BadHeaderError, self.mail.send, msg)
+
 
 class TestMail(TestCase):
 
@@ -236,3 +240,23 @@ class TestConnection(TestCase):
                     conn.send(msg)
 
             assert len(outbox) == 100
+
+    def test_max_emails(self):
+        
+        messages = []
+
+        with self.mail.record_messages() as outbox:
+            with self.mail.connect(max_emails=10) as conn:
+                for i in xrange(100):
+                    msg = Message(subject="testing",
+                                  recipients=["to@example.com"],
+                                  body="testing")
+        
+                    conn.send(msg)
+
+                    print conn.num_emails
+                    if i % 10 == 0:
+                        assert conn.num_emails == 1
+
+            assert len(outbox) == 100
+
