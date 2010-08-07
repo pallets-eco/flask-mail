@@ -1,4 +1,5 @@
 import smtplib
+import socket
 
 from flaskext.mail.message import Message
 from flaskext.mail.signals import email_dispatched
@@ -13,6 +14,7 @@ class Connection(object):
         self.app = self.mail.app
         self.testing = self.app.testing
         self.max_emails = max_emails or self.mail.max_emails or 0
+        self.fail_silently = self.mail.fail_silently
 
     def __enter__(self):
 
@@ -31,10 +33,14 @@ class Connection(object):
     
     def configure_host(self):
         
-        if self.mail.use_ssl:
-            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
-        else:
-            host = smtplib.SMTP(self.mail.server, self.mail.port)
+        try:
+            if self.mail.use_ssl:
+                host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
+            else:
+                host = smtplib.SMTP(self.mail.server, self.mail.port)
+        except socket.error:
+            if not self.fail_silently:
+                raise
 
         host.set_debuglevel(int(self.app.debug))
 
