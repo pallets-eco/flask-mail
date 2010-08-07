@@ -60,6 +60,10 @@ options (each is explained later in the documentation):
 
 * **DEFAULT_MAIL_SENDER** : default **None**
 
+* **DEFAULT_MAX_EMAILS** : default **None**
+
+* **MAIL_FAIL_SILENTLY** : default **True**
+
 In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Mail**
 in unit tests (see below).
 
@@ -122,6 +126,11 @@ Finally, to send the message, you use the ``Mail`` instance configured with your
 
     mail.send(msg)
 
+If the setting **MAIL_FAIL_SILENTLY** is **True**, and the connection fails (for example, the mail
+server cannot be found at that hostname) then no error will be raised, although of course no emails will
+be sent either.
+
+
 Bulk emails
 -----------
 
@@ -143,6 +152,10 @@ In that case you do things slightly differently::
 
 
 The connection to your email host is kept alive and closed automatically once all the messages have been sent.
+
+If you are going to run a mass email batch, be careful to pass in the ``max_emails`` parameter, which sets the maximum
+number of emails that will be sent before reconnecting. Some mail servers set a limit on the number of emails sent
+in a single connection. You can also set this globally with the **DEFAULT_MAX_EMAILS** setting.
 
 Attachments
 -----------

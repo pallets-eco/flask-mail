@@ -90,5 +90,3 @@ class Connection(object):
         self.send(Message(*args, **kwargs))
 
 
-
-
