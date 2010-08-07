@@ -108,6 +108,11 @@ class Mail(object):
     def connect(self, max_emails=None):
         """
         Opens a connection to the mail host.
+        
+        :param max_emails: the maximum number of emails that can 
+        be sent in a single connection. If this number is exceeded
+        the Connection instance will reconnect to the mail server. The
+        DEFAULT_MAX_EMAILS config setting is used if this is None.
         """
         return Connection(self, max_emails) 
                           
