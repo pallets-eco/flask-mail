@@ -12,13 +12,13 @@ class Connection(object):
 
         self.mail = mail
         self.app = self.mail.app
-        self.testing = self.app.testing
+        self.suppress = self.mail.suppress
         self.max_emails = max_emails or self.mail.max_emails or 0
         self.fail_silently = self.mail.fail_silently
 
     def __enter__(self):
 
-        if self.testing:
+        if self.suppress:
             self.host = None
         else:
             self.host = self.configure_host()

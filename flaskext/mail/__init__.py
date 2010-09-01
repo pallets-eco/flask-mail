@@ -48,9 +48,10 @@ class Mail(object):
         self.use_ssl = app.config.get('MAIL_USE_SSL', False)
         self.debug = int(app.config.get('MAIL_DEBUG', app.debug))
         self.max_emails = app.config.get('DEFAULT_MAX_EMAILS')
+        self.suppress = app.config.get('MAIL_SUPPRESS_SEND', False)
         self.fail_silently = app.config.get('MAIL_FAIL_SILENTLY', True)
 
-        self.testing = app.testing
+        self.suppress = self.suppress or app.testing
         
         self.app = app
 

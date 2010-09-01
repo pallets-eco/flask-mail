@@ -63,6 +63,8 @@ options (each is explained later in the documentation):
 * **DEFAULT_MAX_EMAILS** : default **None**
 
 * **MAIL_FAIL_SILENTLY** : default **True**
+  
+* **MAIL_SUPPRESS_SEND** : default **False**
 
 In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Mail**
 in unit tests (see below).
@@ -167,8 +169,8 @@ Adding attachments is straightforward::
 
 See the `API`_ for details.
 
-Unit tests
-----------
+Unit tests and suppressing emails
+---------------------------------
 
 When you are sending messages inside of unit tests, or in a development
 environment, it's useful to be able to suppress email sending.
@@ -176,6 +178,9 @@ environment, it's useful to be able to suppress email sending.
 If the setting ``TESTING`` is set to ``True``, emails will be
 suppressed. Calling ``send()`` on your messages will not result in 
 any messages being actually sent.
+
+Alternatively outside a testing environment you can set ``MAIL_SUPPRESS_SEND`` to **False**. This
+will have the same effect.
 
 However, it's still useful to keep track of emails that would have been 
 sent when you are writing unit tests.
