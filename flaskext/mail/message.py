@@ -47,6 +47,8 @@ class Message(object):
                  body=None, 
                  html=None, 
                  sender=None,
+                 cc=None,
+                 bcc=None,
                  attachments=None):
 
 
@@ -62,6 +64,9 @@ class Message(object):
         self.sender = sender
         self.body = body
         self.html = html
+
+        self.cc = cc
+        self.bcc = bcc 
 
         if recipients is None:
             recipients = []
@@ -83,6 +88,12 @@ class Message(object):
                                 From=self.sender,
                                 Body=self.body,
                                 Html=self.html)
+
+        if self.bcc:
+            response.base['Bcc'] = self.bcc
+
+        if self.cc:
+            response.base['Cc'] = self.cc
 
         for attachment in self.attachments:
 

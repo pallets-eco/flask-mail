@@ -33,6 +33,7 @@ class TestCase(unittest.TestCase):
 
         self.ctx.pop()
 
+
 class TestMessage(TestCase):
 
     def test_initialize(self):
@@ -124,6 +125,26 @@ class TestMessage(TestCase):
             assert len(outbox) == 1
         
         self.app.config['TESTING'] = True
+
+    def test_bcc(self):
+
+        msg = Message(subject="testing",
+                      recipients=["to@example.com"],
+                      body="testing",
+                      bcc=["tosomeoneelse@example.com"])
+
+        response = msg.get_response()
+        assert "Bcc: tosomeoneelse@example.com" in str(response)
+
+    def test_cc(self):
+
+        msg = Message(subject="testing",
+                      recipients=["to@example.com"],
+                      body="testing",
+                      cc=["tosomeoneelse@example.com"])
+
+        response = msg.get_response()
+        assert "Cc: tosomeoneelse@example.com" in str(response)
 
     def test_attach(self):
 
