@@ -78,6 +78,10 @@ class Message(object):
 
         self.attachments = attachments
 
+    @property
+    def send_to(self):
+        return set(self.recipients) | set(self.bcc or ()) | set(self.cc or ())
+
     def get_response(self):
         """
         Creates a Lamson MailResponse instance

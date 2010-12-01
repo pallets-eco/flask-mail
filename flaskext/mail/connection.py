@@ -61,9 +61,8 @@ class Connection(object):
 
         if self.host:
             self.host.sendmail(message.sender,
-                               message.recipients,
+                               message.send_to,
                                str(message.get_response()))
-        
 
         if email_dispatched:
             email_dispatched.send(message, app=self.app)
