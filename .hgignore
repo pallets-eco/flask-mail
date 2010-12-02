@@ -2,6 +2,7 @@ syntax: glob
 
 *.coverage
 *.egg-info
+*.egg
 *.log
 *.pyc
 *.db
@@ -19,6 +20,7 @@ fab_settings.py
 production_settings.py
 
 dist
+build
 docs/output
 
 _uploads

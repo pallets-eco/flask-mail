@@ -39,6 +39,8 @@ class Message(object):
     :param body: plain text message
     :param html: HTML message
     :param sender: email sender address, or **DEFAULT_MAIL_SENDER** by default
+    :param cc: CC list
+    :param bcc: BCC list
     :param attachments: list of Attachment instances
     """
 
