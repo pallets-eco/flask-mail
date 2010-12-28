@@ -17,8 +17,10 @@ Windows issues
 **Flask-Mail** requires the use of the **Lamson** library, which unfortunately
 has dependencies that do not work on Windows.
 
-It is therefore recommended that you use the `--no-dependencies` option to first
-install Lamson, and do the same again to install **Flask-Mail**.
+You can install Flask-Mail, Lamson and other libraries with the `no dependencies` option::
+
+    easy_install -N lamson chardet flask-mail
+
 
 Installing Flask-Mail
 ---------------------
