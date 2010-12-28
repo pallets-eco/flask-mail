@@ -19,7 +19,7 @@ has dependencies that do not work on Windows.
 
 You can install Flask-Mail, Lamson and other libraries with the `no dependencies` option::
 
-    easy_install -N lamson chardet flask-mail
+    easy_install -N lamson chardet Flask-Mail
 
 
 Installing Flask-Mail
