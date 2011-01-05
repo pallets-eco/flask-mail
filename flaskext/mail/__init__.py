@@ -52,8 +52,12 @@ class Mail(object):
         self.fail_silently = app.config.get('MAIL_FAIL_SILENTLY', True)
 
         self.suppress = self.suppress or app.testing
-        
         self.app = app
+
+        # register extension with app
+        app.extensions = getattr(app, 'extensions', {})
+        app.extensions['mail'] = self
+
 
     @contextmanager
     def record_messages(self):
