@@ -9,7 +9,7 @@ emails to your users.
 The **Flask-Mail** extension provides a simple interface to set up SMTP with your
 `Flask`_ application and to send messages from your views and scripts.
 
-Source code and issue tracking at `Bitbucket`_.
+Source code and issue tracking at `GitHub`_.
 
 Windows issues
 --------------
@@ -29,12 +29,10 @@ Install with **pip** and **easy_install**::
 
     pip install Flask-Mail
 
-or download the latest version from Bitbucket::
+or download the latest version from version control::
 
-    hg clone http://bitbucket.org/danjac/flask-mail
-
+    git clone https://github.com/rduplain/flask-mail.git
     cd flask-mail
-
     python setup.py install
 
 If you are using **virtualenv**, it is assumed that you are installing flask-mail
@@ -247,4 +245,4 @@ API
    :members: attach, add_recipient
 
 .. _Flask: http://flask.pocoo.org
-.. _Bitbucket: http://bitbucket.org/danjac/flask-mail
+.. _GitHub: http://github.com/rduplain/flask-mail
