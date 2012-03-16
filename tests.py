@@ -46,18 +46,18 @@ class TestMessage(TestCase):
     def test_recipients_properly_initialized(self):
 
         msg = Message(subject="subject")
-
         self.assertEqual(msg.recipients, [])
 
         msg2 = Message(subject="subject")
         msg2.add_recipient("somebody@here.com")
+        self.assertEqual(len(msg2.recipients), 1)
 
-        self.assertEqual(len(msg.recipients), 0)
-
-        msg3 = Message(subject="subject")
-        msg3.add_recipient("somebody@here.com")
-
-        self.assertEqual(len(msg.recipients), 0)
+    def test_sendto_properly_set(self):
+        msg = Message(subject="subject", recipients=["somebody@here.com"],
+                       cc=["cc@example.com"], bcc=["bcc@example.com"])
+        self.assertEqual(len(msg.send_to), 3)
+        msg.add_recipient("cc@example.com")
+        self.assertEqual(len(msg.send_to), 3)
 
     def test_add_recipient(self):
 
