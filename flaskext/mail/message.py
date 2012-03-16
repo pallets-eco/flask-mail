@@ -17,11 +17,11 @@ class Attachment(object):
     :param content_type: file mimetype
     :param data: the raw file data
     :param disposition: content-disposition (if any)
- 
+
     """
 
     def __init__(self, filename=None, content_type=None, data=None,
-        disposition=None): 
+        disposition=None):
 
         self.filename = filename
         self.content_type = content_type
@@ -30,7 +30,7 @@ class Attachment(object):
 
 
 class Message(object):
-    
+
     """
     Encapsulates an email message.
 
@@ -42,16 +42,18 @@ class Message(object):
     :param cc: CC list
     :param bcc: BCC list
     :param attachments: list of Attachment instances
+    :param reply_to: reply-to address
     """
 
-    def __init__(self, subject, 
-                 recipients=None, 
-                 body=None, 
-                 html=None, 
+    def __init__(self, subject,
+                 recipients=None,
+                 body=None,
+                 html=None,
                  sender=None,
                  cc=None,
                  bcc=None,
-                 attachments=None):
+                 attachments=None,
+                 reply_to=None):
 
 
         if sender is None:
@@ -68,13 +70,14 @@ class Message(object):
         self.html = html
 
         self.cc = cc
-        self.bcc = bcc 
+        self.bcc = bcc
+        self.reply_to = reply_to
 
         if recipients is None:
             recipients = []
 
         self.recipients = list(recipients)
-        
+
         if attachments is None:
             attachments = []
 
@@ -89,7 +92,7 @@ class Message(object):
         Creates a Lamson MailResponse instance
         """
 
-        response = MailResponse(Subject=self.subject, 
+        response = MailResponse(Subject=self.subject,
                                 To=self.recipients,
                                 From=self.sender,
                                 Body=self.body,
@@ -101,31 +104,35 @@ class Message(object):
         if self.cc:
             response.base['Cc'] = self.cc
 
+        if self.reply_to:
+            response.base['Reply-To'] = self.reply_to
+
         for attachment in self.attachments:
 
-            response.attach(attachment.filename, 
-                            attachment.content_type, 
-                            attachment.data, 
+            response.attach(attachment.filename,
+                            attachment.content_type,
+                            attachment.data,
                             attachment.disposition)
 
         return response
-    
+
     def is_bad_headers(self):
         """
         Checks for bad headers i.e. newlines in subject, sender or recipients.
         """
-       
-        for val in [self.subject, self.sender] + self.recipients:
+
+        reply_to = self.reply_to or ''
+        for val in [self.subject, self.sender, reply_to] + self.recipients:
             for c in '\r\n':
                 if c in val:
                     return True
         return False
-        
+
     def send(self, connection):
         """
         Verifies and sends the message.
         """
-        
+
         assert self.recipients, "No recipients have been added"
         assert self.body or self.html, "No body or HTML has been set"
         assert self.sender, "No sender address has been set"
@@ -138,21 +145,21 @@ class Message(object):
     def add_recipient(self, recipient):
         """
         Adds another recipient to the message.
-        
+
         :param recipient: email address of recipient.
         """
-        
+
         self.recipients.append(recipient)
 
-    def attach(self, 
-               filename=None, 
-               content_type=None, 
+    def attach(self,
+               filename=None,
+               content_type=None,
                data=None,
                disposition=None):
-        
+
         """
         Adds an attachment to the message.
-        
+
         :param filename: filename of attachment
         :param content_type: file mimetype
         :param data: the raw file data
