@@ -72,6 +72,16 @@ class TestMessage(TestCase):
         msg = Message(subject="testing",
                       sender=("tester", "tester@example.com"))
 
+    def test_reply_to(self):
+
+        msg = Message(subject="testing",
+                      recipients=["to@example.com"],
+                      sender="spammer <spammer@example.com>",
+                      reply_to="somebody <somebody@example.com>",
+                      body="testing")
+
+        response = msg.get_response()
+        self.assertIn("Reply-To: somebody <somebody@example.com>", str(response))
 
     def test_send_without_sender(self):
 
@@ -175,6 +185,16 @@ class TestMessage(TestCase):
 
         msg = Message(subject="testing",
                       sender="from@example.com\n\r",
+                      recipients=["to@example.com"],
+                      body="testing")
+
+        self.assertRaises(BadHeaderError, self.mail.send, msg)
+
+    def test_bad_header_reply_to(self):
+
+        msg = Message(subject="testing",
+                      sender="from@example.com",
+                      reply_to="evil@example.com\n\r",
                       recipients=["to@example.com"],
                       body="testing")
 
