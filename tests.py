@@ -21,7 +21,7 @@ class TestCase(unittest.TestCase):
 
         self.app = Flask(__name__)
         self.app.config.from_object(self)
-        
+
         assert self.app.testing
 
         self.mail = Mail(self.app)
@@ -68,13 +68,13 @@ class TestMessage(TestCase):
 
         assert msg.recipients == ["to@example.com"]
 
-    
+
     def test_sender_as_tuple(self):
 
         msg = Message(subject="testing",
                       sender=("tester", "tester@example.com"))
 
-    
+
     def test_send_without_sender(self):
 
         del self.app.config['DEFAULT_MAIL_SENDER']
@@ -107,7 +107,7 @@ class TestMessage(TestCase):
     def test_normal_send(self):
         """
         This will not actually send a message unless the mail server
-        is set up. The error will be logged but test should still 
+        is set up. The error will be logged but test should still
         pass.
         """
 
@@ -121,9 +121,9 @@ class TestMessage(TestCase):
                           body="testing")
 
             self.mail.send(msg)
-            
+
             assert len(outbox) == 1
-        
+
         self.app.config['TESTING'] = True
 
     def test_bcc(self):
@@ -151,18 +151,18 @@ class TestMessage(TestCase):
         msg = Message(subject="testing",
                       recipients=["to@example.com"],
                       body="testing")
-        
-        msg.attach(data="this is a test", 
+
+        msg.attach(data="this is a test",
                    content_type="text/plain")
-        
+
 
         a = msg.attachments[0]
-        
+
         assert a.filename is None
         assert a.disposition == 'attachment'
         assert a.content_type == "text/plain"
         assert a.data == "this is a test"
- 
+
 
     def test_bad_header_subject(self):
 
@@ -205,7 +205,7 @@ class TestMail(TestCase):
 
             self.mail.send(msg)
 
-            assert len(outbox) == 1 
+            assert len(outbox) == 1
 
     def test_send_message(self):
 
@@ -248,7 +248,7 @@ class TestConnection(TestCase):
             assert len(outbox) == 1
 
     def test_send_many(self):
-        
+
         messages = []
 
         with self.mail.record_messages() as outbox:
@@ -257,13 +257,13 @@ class TestConnection(TestCase):
                     msg = Message(subject="testing",
                                   recipients=["to@example.com"],
                                   body="testing")
-        
+
                     conn.send(msg)
 
             assert len(outbox) == 100
 
     def test_max_emails(self):
-        
+
         messages = []
 
         with self.mail.record_messages() as outbox:
@@ -272,7 +272,7 @@ class TestConnection(TestCase):
                     msg = Message(subject="testing",
                                   recipients=["to@example.com"],
                                   body="testing")
-        
+
                     conn.send(msg)
 
                     print conn.num_emails
