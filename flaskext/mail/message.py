@@ -42,6 +42,7 @@ class Message(object):
     :param cc: CC list
     :param bcc: BCC list
     :param attachments: list of Attachment instances
+    :param reply_to: reply-to address
     """
 
     def __init__(self, subject,
@@ -51,7 +52,8 @@ class Message(object):
                  sender=None,
                  cc=None,
                  bcc=None,
-                 attachments=None):
+                 attachments=None,
+                 reply_to=None):
 
 
         if sender is None:
@@ -69,6 +71,7 @@ class Message(object):
 
         self.cc = cc
         self.bcc = bcc
+        self.reply_to = reply_to
 
         if recipients is None:
             recipients = []
@@ -101,6 +104,9 @@ class Message(object):
         if self.cc:
             response.base['Cc'] = self.cc
 
+        if self.reply_to:
+            response.base['Reply-To'] = self.reply_to
+
         for attachment in self.attachments:
 
             response.attach(attachment.filename,
@@ -115,7 +121,8 @@ class Message(object):
         Checks for bad headers i.e. newlines in subject, sender or recipients.
         """
 
-        for val in [self.subject, self.sender] + self.recipients:
+        reply_to = self.reply_to or ''
+        for val in [self.subject, self.sender, reply_to] + self.recipients:
             for c in '\r\n':
                 if c in val:
                     return True
