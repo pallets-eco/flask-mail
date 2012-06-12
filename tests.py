@@ -3,12 +3,10 @@
 from __future__ import with_statement
 
 import unittest
-import mailbox
 
-from email import encoders
+from flask import Flask
+from flask_mail import Mail, Message, BadHeaderError
 
-from flask import Flask, g
-from flask_mail import Mail, Message, BadHeaderError, Attachment
 
 class TestCase(unittest.TestCase):
 
@@ -39,7 +37,6 @@ class TestMessage(TestCase):
         msg = Message(subject="subject",
                       recipients=["to@example.com"])
 
-
         self.assertEqual(msg.sender, "support@mysite.com")
         self.assertEqual(msg.recipients, ["to@example.com"])
 
@@ -66,11 +63,10 @@ class TestMessage(TestCase):
 
         self.assertEqual(msg.recipients, ["to@example.com"])
 
-
     def test_sender_as_tuple(self):
-
         msg = Message(subject="testing",
                       sender=("tester", "tester@example.com"))
+        self.assertEqual('tester <tester@example.com>', msg.sender)
 
     def test_reply_to(self):
 
@@ -163,14 +159,12 @@ class TestMessage(TestCase):
         msg.attach(data="this is a test",
                    content_type="text/plain")
 
-
         a = msg.attachments[0]
 
         self.assertIsNone(a.filename)
         self.assertEqual(a.disposition, 'attachment')
         self.assertEqual(a.content_type, "text/plain")
         self.assertEqual(a.data, "this is a test")
-
 
     def test_bad_header_subject(self):
 
@@ -267,8 +261,6 @@ class TestConnection(TestCase):
 
     def test_send_many(self):
 
-        messages = []
-
         with self.mail.record_messages() as outbox:
             with self.mail.connect() as conn:
                 for i in xrange(100):
@@ -281,8 +273,6 @@ class TestConnection(TestCase):
             self.assertEqual(len(outbox), 100)
 
     def test_max_emails(self):
-
-        messages = []
 
         with self.mail.record_messages() as outbox:
             with self.mail.connect(max_emails=10) as conn:
@@ -298,4 +288,3 @@ class TestConnection(TestCase):
                         self.assertEqual(conn.num_emails, 1)
 
             self.assertEqual(len(outbox), 100)
-

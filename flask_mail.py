@@ -321,7 +321,6 @@ class Mail(object):
         app.extensions = getattr(app, 'extensions', {})
         app.extensions['mail'] = self
 
-
     @contextmanager
     def record_messages(self):
         """
@@ -337,7 +336,7 @@ class Mail(object):
         """
 
         if not email_dispatched:
-            raise RuntimeError, "blinker must be installed"
+            raise RuntimeError("blinker must be installed")
 
         outbox = []
 
@@ -393,5 +392,3 @@ email_dispatched = signals.signal("email-dispatched", doc="""
 Signal sent when an email is dispatched. This signal will also be sent
 in testing mode, even though the email will not actually be sent.
 """)
-
-
