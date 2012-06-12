@@ -8,7 +8,7 @@ import mailbox
 from email import encoders
 
 from flask import Flask, g
-from flaskext.mail import Mail, Message, BadHeaderError, Attachment
+from flask_mail import Mail, Message, BadHeaderError, Attachment
 
 class TestCase(unittest.TestCase):
 
@@ -80,7 +80,7 @@ class TestMessage(TestCase):
                       reply_to="somebody <somebody@example.com>",
                       body="testing")
 
-        response = msg.get_response()
+        response = msg.as_string()
         self.assertIn("Reply-To: somebody <somebody@example.com>", str(response))
 
     def test_send_without_sender(self):
@@ -141,7 +141,7 @@ class TestMessage(TestCase):
                       body="testing",
                       bcc=["tosomeoneelse@example.com"])
 
-        response = msg.get_response()
+        response = msg.as_string()
         self.assertIn("Bcc: tosomeoneelse@example.com", str(response))
 
     def test_cc(self):
@@ -151,7 +151,7 @@ class TestMessage(TestCase):
                       body="testing",
                       cc=["tosomeoneelse@example.com"])
 
-        response = msg.get_response()
+        response = msg.as_string()
         self.assertIn("Cc: tosomeoneelse@example.com", str(response))
 
     def test_attach(self):
