@@ -11,17 +11,6 @@ The **Flask-Mail** extension provides a simple interface to set up SMTP with you
 
 Source code and issue tracking at `GitHub`_.
 
-Windows issues
---------------
-
-**Flask-Mail** requires the use of the **Lamson** library, which unfortunately
-has dependencies that do not work on Windows.
-
-You can install Flask-Mail, Lamson and other libraries with the `no dependencies` option::
-
-    easy_install -N lamson chardet Flask-Mail
-
-
 Installing Flask-Mail
 ---------------------
 
@@ -65,14 +54,14 @@ options (each is explained later in the documentation):
 * **MAIL_FAIL_SILENTLY** : default **True**
   
 * **MAIL_SUPPRESS_SEND** : default **False**
-
+git
 In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Mail**
 in unit tests (see below).
 
 Emails are managed through a ``Mail`` instance::
 
     from flask import Flask
-    from flaskext.mail import Mail
+    from flask_mail import Mail
 
     app = Flask(__name__)
     mail = Mail(app)
@@ -91,7 +80,7 @@ Sending messages
 
 To send a message first create a ``Message`` instance::
 
-    from flaskext.mail import Message
+    from flask_mail import Message
 
     @app.route("/")
     def index():
@@ -231,7 +220,7 @@ app instance as an optional argument::
 API
 ---
 
-.. module:: flaskext.mail
+.. module:: flask_mail
  
 .. autoclass:: Mail
    :members: send, connect, send_message
