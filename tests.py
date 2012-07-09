@@ -205,6 +205,37 @@ class TestMessage(TestCase):
 
         self.assertRaises(BadHeaderError, self.mail.send, msg)
 
+    def test_plain_message(self):
+
+        plain_text = "Hello Joe,\nHow are you?"
+
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body=plain_text)
+
+        self.assertEqual(plain_text, msg.body)
+        self.assertIn('Content-Type: text/plain', msg.as_string())
+
+    def test_plain_message_with_attachments(self):
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body="hello")
+
+        msg.attach(data="this is a test",
+                   content_type="text/plain")
+
+        self.assertIn('Content-Type: multipart/mixed', msg.as_string())
+
+    def test_html_message(self):
+        html_text = "<p>Hello World</p>"
+
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      html=html_text)
+
+        self.assertEqual(html_text, msg.html)
+        self.assertIn('Content-Type: multipart/alternative', msg.as_string())
+
 
 class TestMail(TestCase):
 
@@ -283,7 +314,6 @@ class TestConnection(TestCase):
 
                     conn.send(msg)
 
-                    print conn.num_emails
                     if i % 10 == 0:
                         self.assertEqual(conn.num_emails, 1)
 

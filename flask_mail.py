@@ -195,7 +195,19 @@ class Message(object):
         """
         Creates the email
         """
-        msg = MIMEMultipart('alternative')
+
+        if len(self.attachments) == 0 and not self.html:
+            # No html content and zero attachments means plain text
+            msg = MIMEText(self.body)
+        elif len(self.attachments) > 0 and not self.html:
+            # No html and at least one attachment means multipart
+            msg = MIMEMultipart()
+            msg.attach(MIMEText(self.body))
+        else:
+            # Anything else
+            msg = MIMEMultipart('alternative')
+            msg.attach(MIMEText(self.body, 'plain'))
+            msg.attach(MIMEText(self.html, 'html'))
 
         msg['Subject'] = self.subject
         msg['From'] = self.sender
@@ -209,12 +221,6 @@ class Message(object):
 
         if self.reply_to:
             msg['Reply-To'] = self.reply_to
-
-        part1 = MIMEText(self.body, 'plain')
-        part2 = MIMEText(self.html, 'html')
-
-        msg.attach(part1)
-        msg.attach(part2)
 
         for attachment in self.attachments:
             f = MIMEBase(*attachment.content_type.split('/'))
