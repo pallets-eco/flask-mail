@@ -3,6 +3,9 @@ from flask import _request_ctx_stack
 
 from lamson.mail import MailResponse
 
+import email
+import time
+
 class BadHeaderError(Exception): pass
 
 
@@ -69,6 +72,9 @@ class Message(object):
         self.body = body
         self.html = html
 
+        self.date = email.utils.formatdate(time.time(), localtime=True)
+        self.msgId = email.utils.make_msgid()
+
         self.cc = cc
         self.bcc = bcc
         self.reply_to = reply_to
@@ -97,6 +103,9 @@ class Message(object):
                                 From=self.sender,
                                 Body=self.body,
                                 Html=self.html)
+
+        response.base['Date'] = self.date
+        response.base['Message-ID'] = self.msgId
 
         if self.bcc:
             response.base['Bcc'] = self.bcc
