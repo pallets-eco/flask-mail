@@ -113,7 +113,6 @@ class BadHeaderError(Exception):
 
 
 class Attachment(object):
-
     """
     Encapsulates file attachment information.
 
@@ -127,12 +126,13 @@ class Attachment(object):
     """
 
     def __init__(self, filename=None, content_type=None, data=None,
-        disposition=None):
+        disposition=None, headers=None):
 
         self.filename = filename
         self.content_type = content_type
         self.data = data
         self.disposition = disposition or 'attachment'
+        self.headers = headers or {}
 
 
 class Message(object):
@@ -226,8 +226,13 @@ class Message(object):
             f = MIMEBase(*attachment.content_type.split('/'))
             f.set_payload(attachment.data)
             encode_base64(f)
+
             f.add_header('Content-Disposition', '%s;filename=%s' %
                          (attachment.disposition, attachment.filename))
+
+            for key, value in attachment.headers:
+                f.add_header(key, value)
+
             msg.attach(f)
 
         return msg.as_string()
@@ -271,7 +276,8 @@ class Message(object):
                filename=None,
                content_type=None,
                data=None,
-               disposition=None):
+               disposition=None,
+               headers=None):
 
         """
         Adds an attachment to the message.
@@ -283,7 +289,7 @@ class Message(object):
         """
 
         self.attachments.append(
-            Attachment(filename, content_type, data, disposition))
+            Attachment(filename, content_type, data, disposition, headers))
 
 
 class Mail(object):
