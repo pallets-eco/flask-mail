@@ -237,7 +237,7 @@ class Message(object):
 
         return msg.as_string()
 
-    def is_bad_headers(self):
+    def has_bad_headers(self):
         """
         Checks for bad headers i.e. newlines in subject, sender or recipients.
         """
@@ -249,6 +249,12 @@ class Message(object):
                     return True
         return False
 
+    def is_bad_headers(self):
+        from warnings import warn
+        warn(DeprecationWarning('is_bad_headers is deprecated, use the '
+            'new has_bad_headers method instead.'), stacklevel=1)
+        return self.has_bad_headers()
+
     def send(self, connection):
         """
         Verifies and sends the message.
@@ -258,7 +264,7 @@ class Message(object):
         assert self.body or self.html, "No body or HTML has been set"
         assert self.sender, "No sender address has been set"
 
-        if self.is_bad_headers():
+        if self.has_bad_headers():
             raise BadHeaderError
 
         connection.send(self)
