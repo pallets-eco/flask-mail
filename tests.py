@@ -3,12 +3,10 @@
 from __future__ import with_statement
 
 import unittest
-import mailbox
 
-from email import encoders
+from flask import Flask
+from flask_mail import Mail, Message, BadHeaderError
 
-from flask import Flask, g
-from flaskext.mail import Mail, Message, BadHeaderError, Attachment
 
 class TestCase(unittest.TestCase):
 
@@ -39,7 +37,6 @@ class TestMessage(TestCase):
         msg = Message(subject="subject",
                       recipients=["to@example.com"])
 
-
         self.assertEqual(msg.sender, "support@mysite.com")
         self.assertEqual(msg.recipients, ["to@example.com"])
 
@@ -66,11 +63,10 @@ class TestMessage(TestCase):
 
         self.assertEqual(msg.recipients, ["to@example.com"])
 
-
     def test_sender_as_tuple(self):
-
         msg = Message(subject="testing",
                       sender=("tester", "tester@example.com"))
+        self.assertEqual('tester <tester@example.com>', msg.sender)
 
     def test_reply_to(self):
 
@@ -80,7 +76,7 @@ class TestMessage(TestCase):
                       reply_to="somebody <somebody@example.com>",
                       body="testing")
 
-        response = msg.get_response()
+        response = msg.as_string()
         self.assertIn("Reply-To: somebody <somebody@example.com>", str(response))
 
     def test_send_without_sender(self):
@@ -141,7 +137,7 @@ class TestMessage(TestCase):
                       body="testing",
                       bcc=["tosomeoneelse@example.com"])
 
-        response = msg.get_response()
+        response = msg.as_string()
         self.assertIn("Bcc: tosomeoneelse@example.com", str(response))
 
     def test_cc(self):
@@ -151,7 +147,7 @@ class TestMessage(TestCase):
                       body="testing",
                       cc=["tosomeoneelse@example.com"])
 
-        response = msg.get_response()
+        response = msg.as_string()
         self.assertIn("Cc: tosomeoneelse@example.com", str(response))
 
     def test_attach(self):
@@ -163,14 +159,12 @@ class TestMessage(TestCase):
         msg.attach(data="this is a test",
                    content_type="text/plain")
 
-
         a = msg.attachments[0]
 
         self.assertIsNone(a.filename)
         self.assertEqual(a.disposition, 'attachment')
         self.assertEqual(a.content_type, "text/plain")
         self.assertEqual(a.data, "this is a test")
-
 
     def test_bad_header_subject(self):
 
@@ -210,6 +204,37 @@ class TestMessage(TestCase):
                       body="testing")
 
         self.assertRaises(BadHeaderError, self.mail.send, msg)
+
+    def test_plain_message(self):
+
+        plain_text = "Hello Joe,\nHow are you?"
+
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body=plain_text)
+
+        self.assertEqual(plain_text, msg.body)
+        self.assertIn('Content-Type: text/plain', msg.as_string())
+
+    def test_plain_message_with_attachments(self):
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body="hello")
+
+        msg.attach(data="this is a test",
+                   content_type="text/plain")
+
+        self.assertIn('Content-Type: multipart/mixed', msg.as_string())
+
+    def test_html_message(self):
+        html_text = "<p>Hello World</p>"
+
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      html=html_text)
+
+        self.assertEqual(html_text, msg.html)
+        self.assertIn('Content-Type: multipart/alternative', msg.as_string())
 
 
 class TestMail(TestCase):
@@ -267,8 +292,6 @@ class TestConnection(TestCase):
 
     def test_send_many(self):
 
-        messages = []
-
         with self.mail.record_messages() as outbox:
             with self.mail.connect() as conn:
                 for i in xrange(100):
@@ -282,8 +305,6 @@ class TestConnection(TestCase):
 
     def test_max_emails(self):
 
-        messages = []
-
         with self.mail.record_messages() as outbox:
             with self.mail.connect(max_emails=10) as conn:
                 for i in xrange(100):
@@ -293,9 +314,7 @@ class TestConnection(TestCase):
 
                     conn.send(msg)
 
-                    print conn.num_emails
                     if i % 10 == 0:
                         self.assertEqual(conn.num_emails, 1)
 
             self.assertEqual(len(outbox), 100)
-
