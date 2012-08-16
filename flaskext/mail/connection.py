@@ -22,7 +22,7 @@ class Connection(object):
             self.host = None
         else:
             self.host = self.configure_host()
-        
+
         self.num_emails = 0
 
         return self
@@ -30,9 +30,9 @@ class Connection(object):
     def __exit__(self, exc_type, exc_value, tb):
         if self.host:
             self.host.quit()
-    
+
     def configure_host(self):
-        
+
         try:
             if self.mail.use_ssl:
                 host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
@@ -43,7 +43,7 @@ class Connection(object):
                 return
             raise
 
-        host.set_debuglevel(int(self.app.debug))
+        host.set_debuglevel(int(self.mail.debug))
 
         if self.mail.use_tls:
             host.starttls()
@@ -55,7 +55,7 @@ class Connection(object):
     def send(self, message):
         """
         Sends message.
-        
+
         :param message: Message instance.
         """
 
@@ -70,7 +70,7 @@ class Connection(object):
         self.num_emails += 1
 
         if self.num_emails == self.max_emails:
-            
+
             self.num_emails = 0
             if self.host:
                 self.host.quit()
@@ -78,10 +78,10 @@ class Connection(object):
 
     def send_message(self, *args, **kwargs):
         """
-        Shortcut for send(msg). 
+        Shortcut for send(msg).
 
         Takes same arguments as Message constructor.
-    
+
         :versionadded: 0.3.5
 
         """
