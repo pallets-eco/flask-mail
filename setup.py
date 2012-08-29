@@ -18,24 +18,21 @@ from setuptools import setup
 
 setup(
     name='Flask-Mail',
-    version='0.6.1',
+    version='0.7.0',
     url='http://bitbucket.org/danjac/flask-mail',
     license='BSD',
     author='Dan Jacob',
     author_email='danjac354@gmail.com',
     description='Flask extension for sending email',
     long_description=__doc__,
-    packages=[
-        'flaskext',
-        'flaskext.mail',
+    py_modules=[
+        'flask_mail'
     ],
-    namespace_packages=['flaskext'],
     test_suite='nose.collector',
     zip_safe=False,
     platforms='any',
     install_requires=[
         'Flask',
-        'Lamson',
         'blinker',
     ],
     tests_require=[
