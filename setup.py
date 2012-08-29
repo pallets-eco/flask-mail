@@ -10,19 +10,19 @@ Links
 `````
 
 * `documentation <http://packages.python.org/Flask-Mail>`_
-* `development version
-  <http://bitbucket.org/danjac/flask-mail/get/tip.gz#egg=Flask-Mail-dev>`_
 """
 from setuptools import setup
 
 
 setup(
     name='Flask-Mail',
-    version='0.7.0',
-    url='http://bitbucket.org/danjac/flask-mail',
+    version='0.7.1',
+    url='https://github.com/rduplain/flask-mail',
     license='BSD',
     author='Dan Jacob',
     author_email='danjac354@gmail.com',
+    maintainer='Ron DuPlain',
+    maintainer_email='ron.duplain@gmail.com',
     description='Flask extension for sending email',
     long_description=__doc__,
     py_modules=[
