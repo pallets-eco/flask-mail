@@ -62,7 +62,7 @@ class Connection(object):
                 return
             raise
 
-        host.set_debuglevel(int(self.app.debug))
+        host.set_debuglevel(int(self.mail.debug))
 
         if self.mail.use_tls:
             host.starttls()
