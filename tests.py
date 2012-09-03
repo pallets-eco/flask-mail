@@ -2,7 +2,10 @@
 
 from __future__ import with_statement
 
+import email.utils
 import unittest
+import time
+import re
 
 from flask import Flask
 from flask_mail import Mail, Message, BadHeaderError
@@ -236,6 +239,28 @@ class TestMessage(TestCase):
         self.assertEqual(html_text, msg.html)
         self.assertIn('Content-Type: multipart/alternative', msg.as_string())
 
+    def test_date_header(self):
+        before = time.time()
+
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body="hello")
+
+        after = time.time()
+        self.assertTrue(before <= msg.date <= after)
+
+        dateFormatted = email.utils.formatdate(msg.date, localtime=True)
+        self.assertIn('Date: ' + dateFormatted, msg.as_string())
+
+    def test_msgid_header(self):
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body="hello")
+
+        # see RFC 5322 section 3.6.4. for the exact format specification
+        r = re.compile(r"<\S+@\S+>").match(msg.msgId)
+        self.assertIsNotNone(r)
+        self.assertIn('Message-ID: ' + msg.msgId, msg.as_string())
 
 class TestMail(TestCase):
 
@@ -264,7 +289,6 @@ class TestMail(TestCase):
             self.assertEqual(msg.subject, "testing")
             self.assertEqual(msg.recipients, ["tester@example.com"])
             self.assertEqual(msg.body, "test")
-
 
 class TestConnection(TestCase):
 

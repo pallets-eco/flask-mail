@@ -13,11 +13,13 @@ from __future__ import with_statement
 import blinker
 import smtplib
 import socket
+import time
 
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
 from contextlib import contextmanager
 
 from flask import current_app
@@ -173,6 +175,9 @@ class Message(object):
         self.body = body
         self.html = html
 
+        self.date = time.time()
+        self.msgId = make_msgid()
+
         self.cc = cc
         self.bcc = bcc
         self.reply_to = reply_to
@@ -212,6 +217,10 @@ class Message(object):
         msg['Subject'] = self.subject
         msg['From'] = self.sender
         msg['To'] = ', '.join(self.recipients)
+
+        msg['Date'] = formatdate(self.date, localtime=True)
+        # see RFC 5322 section 3.6.4.
+        msg['Message-ID'] = self.msgId
 
         if self.bcc:
             msg['Bcc'] = ', '.join(self.bcc)
