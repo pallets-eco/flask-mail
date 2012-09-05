@@ -9,7 +9,12 @@ emails to your users.
 The **Flask-Mail** extension provides a simple interface to set up SMTP with your
 `Flask`_ application and to send messages from your views and scripts.
 
-Source code and issue tracking at `GitHub`_.
+Links
+-----
+
+* `documentation <http://packages.python.org/Flask-Mail/>`_
+* `source <http://github.com/mattupstate/flask-mail>`_
+* :doc:`changelog </changelog>`
 
 Installing Flask-Mail
 ---------------------
@@ -52,7 +57,7 @@ options (each is explained later in the documentation):
 * **DEFAULT_MAX_EMAILS** : default **None**
 
 * **MAIL_FAIL_SILENTLY** : default **True**
-  
+
 * **MAIL_SUPPRESS_SEND** : default **False**
 git
 In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Mail**
@@ -88,7 +93,7 @@ To send a message first create a ``Message`` instance::
         msg = Message("Hello",
                       sender="from@example.com",
                       recipients=["to@example.com"])
-       
+
 You can set the recipient emails immediately, or individually::
 
     msg.recipients = ["you@example.com"]
@@ -125,8 +130,8 @@ be sent either.
 Bulk emails
 -----------
 
-Usually in a web application you will be sending one or two emails per request. In certain situations 
-you might want to be able to send perhaps dozens or hundreds of emails in a single batch - probably in 
+Usually in a web application you will be sending one or two emails per request. In certain situations
+you might want to be able to send perhaps dozens or hundreds of emails in a single batch - probably in
 an external process such as a command-line script or cronjob.
 
 In that case you do things slightly differently::
@@ -139,7 +144,7 @@ In that case you do things slightly differently::
                           body=message,
                           subject=subject)
 
-            conn.send(msg) 
+            conn.send(msg)
 
 
 The connection to your email host is kept alive and closed automatically once all the messages have been sent.
@@ -165,20 +170,20 @@ When you are sending messages inside of unit tests, or in a development
 environment, it's useful to be able to suppress email sending.
 
 If the setting ``TESTING`` is set to ``True``, emails will be
-suppressed. Calling ``send()`` on your messages will not result in 
+suppressed. Calling ``send()`` on your messages will not result in
 any messages being actually sent.
 
 Alternatively outside a testing environment you can set ``MAIL_SUPPRESS_SEND`` to **False**. This
 will have the same effect.
 
-However, it's still useful to keep track of emails that would have been 
+However, it's still useful to keep track of emails that would have been
 sent when you are writing unit tests.
 
 In order to keep track of dispatched emails, use the ``record_messages``
 method::
 
     with mail.record_messages() as outbox:
-        
+
         mail.send_message(subject='testing',
                           body='test',
                           recipients=emails)
@@ -186,12 +191,12 @@ method::
         assert len(outbox) == 1
         assert outbox[0].subject == "testing"
 
-The **outbox** is a list of ``Message`` instances sent. 
+The **outbox** is a list of ``Message`` instances sent.
 
 The blinker package must be installed for this method to work.
 
-Note that the older way of doing things, appending the **outbox** to 
-the ``g`` object, is now deprecated. 
+Note that the older way of doing things, appending the **outbox** to
+the ``g`` object, is now deprecated.
 
 
 Header injection
@@ -221,7 +226,7 @@ API
 ---
 
 .. module:: flask_mail
- 
+
 .. autoclass:: Mail
    :members: send, connect, send_message
 
