@@ -1,0 +1,19 @@
+Flask-Mail Changelog
+====================
+
+Here you can see the full list of changes between each Flask-Mail release.
+
+Version 0.7.1
+-------------
+
+Released September 5th 2012
+
+- Date and message ID headers specified
+
+
+Version 0.7 and prior
+---------------------
+
+Initial development by Dan Jacob and Ron DuPlain. Previously there was not a change log.
+
+
