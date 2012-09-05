@@ -80,6 +80,9 @@ class Connection(object):
         :param message: Message instance.
         """
 
+        if message.date is None:
+            message.date = time.time()
+
         if self.host:
             self.host.sendmail(message.sender,
                                message.send_to,
@@ -161,7 +164,8 @@ class Message(object):
                  cc=None,
                  bcc=None,
                  attachments=None,
-                 reply_to=None):
+                 reply_to=None,
+                 date=None):
 
         if sender is None:
             sender = current_app.config.get("DEFAULT_MAIL_SENDER")
@@ -174,8 +178,7 @@ class Message(object):
         self.sender = sender
         self.body = body
         self.html = html
-
-        self.date = time.time()
+        self.date = date
         self.msgId = make_msgid()
 
         self.cc = cc

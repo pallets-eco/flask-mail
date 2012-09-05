@@ -244,7 +244,8 @@ class TestMessage(TestCase):
 
         msg = Message(subject="subject",
                       recipients=["to@example.com"],
-                      body="hello")
+                      body="hello",
+                      date=time.time())
 
         after = time.time()
         self.assertTrue(before <= msg.date <= after)
@@ -272,6 +273,7 @@ class TestMail(TestCase):
                           body="test")
 
             self.mail.send(msg)
+            self.assertIsNotNone(msg.date)
 
             self.assertEqual(len(outbox), 1)
 
