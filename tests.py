@@ -219,6 +219,12 @@ class TestMessage(TestCase):
         self.assertEqual(plain_text, msg.body)
         self.assertIn('Content-Type: text/plain', msg.as_string())
 
+    def test_message_str(self):
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body="some plain text")
+        self.assertEqual(msg.as_string(), str(msg))
+
     def test_plain_message_with_attachments(self):
         msg = Message(subject="subject",
                       recipients=["to@example.com"],
