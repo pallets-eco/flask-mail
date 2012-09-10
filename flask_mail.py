@@ -201,6 +201,16 @@ class Message(object):
     def send_to(self):
         return set(self.recipients) | set(self.bcc or ()) | set(self.cc or ())
 
+    def _mimeText(self, text, subtype='plain'):
+        """
+        Creates a MIMEText object with the given subtype (default: 'plain')
+        If the text is unicode, the utf-8 charset is used.
+        """
+        if isinstance(text, unicode):
+            return MIMEText(text, _subtype=subtype, _charset="utf-8")
+        else:
+            return MIMEText(text, _subtype=subtype)
+
     def as_string(self):
         """
         Creates the email
@@ -208,16 +218,16 @@ class Message(object):
 
         if len(self.attachments) == 0 and not self.html:
             # No html content and zero attachments means plain text
-            msg = MIMEText(self.body)
+            msg = self._mimeText(self.body)
         elif len(self.attachments) > 0 and not self.html:
             # No html and at least one attachment means multipart
             msg = MIMEMultipart()
-            msg.attach(MIMEText(self.body))
+            msg.attach(self._mimeText(self.body))
         else:
             # Anything else
             msg = MIMEMultipart('alternative')
-            msg.attach(MIMEText(self.body, 'plain'))
-            msg.attach(MIMEText(self.html, 'html'))
+            msg.attach(self._mimeText(self.body, 'plain'))
+            msg.attach(self._mimeText(self.html, 'html'))
 
         msg['Subject'] = self.subject
         msg['From'] = self.sender

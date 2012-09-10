@@ -263,6 +263,42 @@ class TestMessage(TestCase):
         self.assertIsNotNone(r)
         self.assertIn('Message-ID: ' + msg.msgId, msg.as_string())
 
+    def test_unicode_sender(self):
+        msg = Message(subject="subject",
+                sender=(u"ÄÜÖ → ✓", 'from@example.com>'),
+                recipients=["to@example.com"])
+
+        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJMgPGZyb21AZXhhbXBsZS5jb20+Pg==?=', msg.as_string())
+
+    def test_unicode_message(self):
+        msg = Message(subject="subject",
+                recipients=["foo@bar.com"])
+
+        # ascii body
+        msg.body = "normal ascii text"
+        self.assertIn('Content-Type: text/plain; charset="us-ascii"', msg.as_string())
+
+        # ascii html
+        msg.body = None
+        msg.html = "<html><h1>hello</h1></html>"
+        self.assertIn('Content-Type: text/html; charset="us-ascii"', msg.as_string())
+
+        # unicode body
+        msg.body = u"ünicöde ←→ ✓"
+        self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
+
+        # unicode body and unicode html
+        msg.html = u"ünicöde ←→ ✓"
+        self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
+        self.assertIn('Content-Type: text/html; charset="utf-8"', msg.as_string())
+
+        # unicode body and attachments
+        msg.html = None
+        msg.attach(data="foobar", content_type='text/csv')
+        self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
+
+
+
 class TestMail(TestCase):
 
     def test_send(self):
