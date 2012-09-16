@@ -3,6 +3,15 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+Version 0.7.2
+-------------
+
+Released September 16th 2012
+
+- Add __str__ method to Message class
+- Add message character set option which defaults to utf-8
+
+
 Version 0.7.1
 -------------
 

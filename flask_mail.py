@@ -156,6 +156,8 @@ class Message(object):
     :param bcc: BCC list
     :param attachments: list of Attachment instances
     :param reply_to: reply-to address
+    :param date: send date
+    :param charset: message character set
     """
 
     def __init__(self, subject,
@@ -167,7 +169,8 @@ class Message(object):
                  bcc=None,
                  attachments=None,
                  reply_to=None,
-                 date=None):
+                 date=None,
+                 charset=None):
 
         if sender is None:
             sender = current_app.config.get("DEFAULT_MAIL_SENDER")
@@ -182,6 +185,7 @@ class Message(object):
         self.html = html
         self.date = date
         self.msgId = make_msgid()
+        self.charset = charset
 
         self.cc = cc
         self.bcc = bcc
@@ -201,15 +205,13 @@ class Message(object):
     def send_to(self):
         return set(self.recipients) | set(self.bcc or ()) | set(self.cc or ())
 
-    def _mimeText(self, text, subtype='plain'):
+    def _mimetext(self, text, subtype='plain'):
         """
         Creates a MIMEText object with the given subtype (default: 'plain')
         If the text is unicode, the utf-8 charset is used.
         """
-        if isinstance(text, unicode):
-            return MIMEText(text, _subtype=subtype, _charset="utf-8")
-        else:
-            return MIMEText(text, _subtype=subtype)
+        charset = self.charset or 'utf-8'
+        return MIMEText(text, _subtype=subtype, _charset=charset)
 
     def as_string(self):
         """
@@ -218,16 +220,16 @@ class Message(object):
 
         if len(self.attachments) == 0 and not self.html:
             # No html content and zero attachments means plain text
-            msg = self._mimeText(self.body)
+            msg = self._mimetext(self.body)
         elif len(self.attachments) > 0 and not self.html:
             # No html and at least one attachment means multipart
             msg = MIMEMultipart()
-            msg.attach(self._mimeText(self.body))
+            msg.attach(self._mimetext(self.body))
         else:
             # Anything else
             msg = MIMEMultipart('alternative')
-            msg.attach(self._mimeText(self.body, 'plain'))
-            msg.attach(self._mimeText(self.html, 'html'))
+            msg.attach(self._mimetext(self.body, 'plain'))
+            msg.attach(self._mimetext(self.html, 'html'))
 
         msg['Subject'] = self.subject
         msg['From'] = self.sender
