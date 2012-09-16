@@ -261,6 +261,9 @@ class Message(object):
 
         return msg.as_string()
 
+    def __str__(self):
+        return self.as_string()
+
     def has_bad_headers(self):
         """
         Checks for bad headers i.e. newlines in subject, sender or recipients.
