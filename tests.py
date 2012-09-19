@@ -2,7 +2,8 @@
 
 from __future__ import with_statement
 
-import email.utils
+import base64
+import email
 import unittest
 import time
 import re
@@ -244,6 +245,33 @@ class TestMessage(TestCase):
 
         self.assertEqual(html_text, msg.html)
         self.assertIn('Content-Type: multipart/alternative', msg.as_string())
+
+    def test_html_message_with_attachments(self):
+        html_text = "<p>Hello World</p>"
+        plain_text = 'Hello World'
+
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body=plain_text,
+                      html=html_text)
+
+        msg.attach(data="this is a test",
+                   content_type="text/plain")
+
+        self.assertEqual(html_text, msg.html)
+        self.assertIn('Content-Type: multipart/alternative', msg.as_string())
+
+        parsed = email.message_from_string(msg.as_string())
+        self.assertEqual(len(parsed.get_payload()), 2)
+
+        body, attachment = parsed.get_payload()
+        self.assertEqual(len(body.get_payload()), 2)
+
+        plain, html = body.get_payload()
+        self.assertEqual(base64.b64decode(plain.get_payload()), plain_text)
+        self.assertEqual(base64.b64decode(html.get_payload()), html_text)
+
+        self.assertEqual(base64.b64decode(attachment.get_payload()), 'this is a test')
 
     def test_date_header(self):
         before = time.time()
