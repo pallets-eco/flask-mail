@@ -227,9 +227,11 @@ class Message(object):
             msg.attach(self._mimetext(self.body))
         else:
             # Anything else
-            msg = MIMEMultipart('alternative')
-            msg.attach(self._mimetext(self.body, 'plain'))
-            msg.attach(self._mimetext(self.html, 'html'))
+            msg = MIMEMultipart()
+            alternative = MIMEMultipart('alternative')
+            alternative.attach(self._mimetext(self.body, 'plain'))
+            alternative.attach(self._mimetext(self.html, 'html'))
+            msg.attach(alternative)
 
         msg['Subject'] = self.subject
         msg['From'] = self.sender
