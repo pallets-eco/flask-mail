@@ -276,6 +276,14 @@ class TestMessage(TestCase):
 
         self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJMgPGZyb21AZXhhbXBsZS5jb20+Pg==?=', msg.as_string())
 
+    def test_extra_headers(self):
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body="hello",
+                      extra_headers={'X-Extra-Header': 'Yes'})
+
+        self.assertIn('X-Extra-Header: Yes', msg.as_string())
+
     def test_message_charset(self):
         msg = Message(subject="subject",
                 recipients=["foo@bar.com"],
