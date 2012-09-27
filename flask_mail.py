@@ -170,7 +170,8 @@ class Message(object):
                  attachments=None,
                  reply_to=None,
                  date=None,
-                 charset=None):
+                 charset=None,
+                 extra_headers=None):
 
         if sender is None:
             sender = current_app.config.get("DEFAULT_MAIL_SENDER")
@@ -186,6 +187,7 @@ class Message(object):
         self.date = date
         self.msgId = make_msgid()
         self.charset = charset
+        self.extra_headers = extra_headers
 
         self.cc = cc
         self.bcc = bcc
@@ -247,6 +249,10 @@ class Message(object):
 
         if self.reply_to:
             msg['Reply-To'] = self.reply_to
+
+        if self.extra_headers:
+            for k, v in self.extra_headers.iteritems():
+                msg[k] = v
 
         for attachment in self.attachments:
             f = MIMEBase(*attachment.content_type.split('/'))
