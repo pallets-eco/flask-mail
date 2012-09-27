@@ -158,6 +158,7 @@ class Message(object):
     :param reply_to: reply-to address
     :param date: send date
     :param charset: message character set
+    :param extra_headers: A dictionary of additional headers for the message
     """
 
     def __init__(self, subject,

@@ -3,6 +3,14 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+Version 0.7.3
+-------------
+
+Released September 27th 2012
+
+- Add extra_headers to Message class
+
+
 Version 0.7.2
 -------------
 
