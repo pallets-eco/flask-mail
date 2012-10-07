@@ -16,6 +16,7 @@ import blinker
 import smtplib
 import socket
 import time
+import os
 
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
@@ -356,13 +357,21 @@ class Mail(object):
 
         :param app: Flask application instance
         """
-
-        self.server = app.config.get('MAIL_SERVER', '127.0.0.1')
-        self.username = app.config.get('MAIL_USERNAME')
-        self.password = app.config.get('MAIL_PASSWORD')
-        self.port = app.config.get('MAIL_PORT', 25)
-        self.use_tls = app.config.get('MAIL_USE_TLS', False)
-        self.use_ssl = app.config.get('MAIL_USE_SSL', False)
+        if app.config.get('MAIL_USERNAME') is None and os.environ.get('SENDGRID_USERNAME'):
+            # autoconfigure for Heroku Sendgrid
+            self.server = 'smtp.sendgrid.net'
+            self.username = os.environ.get('SENDGRID_USERNAME')
+            self.password = os.environ.get('SENDGRID_PASSWORD')
+            self.port = 587
+            self.use_tls = True
+            self.use_ssl = False
+        else:
+            self.server = app.config.get('MAIL_SERVER', '127.0.0.1')
+            self.username = app.config.get('MAIL_USERNAME')
+            self.password = app.config.get('MAIL_PASSWORD')
+            self.port = app.config.get('MAIL_PORT', 25)
+            self.use_tls = app.config.get('MAIL_USE_TLS', False)
+            self.use_ssl = app.config.get('MAIL_USE_SSL', False)
         self.debug = int(app.config.get('MAIL_DEBUG', app.debug))
         self.max_emails = app.config.get('DEFAULT_MAX_EMAILS')
         self.suppress = app.config.get('MAIL_SUPPRESS_SEND', False)
