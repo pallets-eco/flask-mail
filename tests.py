@@ -101,17 +101,6 @@ class TestMessage(TestCase):
 
         self.assertRaises(AssertionError, self.mail.send, msg)
 
-    def test_send_without_body(self):
-
-        msg = Message(subject="testing",
-                      recipients=["to@example.com"])
-
-        self.assertRaises(AssertionError, self.mail.send, msg)
-
-        msg.html = "<b>test</b>"
-
-        self.mail.send(msg)
-
     def test_normal_send(self):
         """
         This will not actually send a message unless the mail server

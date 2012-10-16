@@ -292,7 +292,6 @@ class Message(object):
         """
 
         assert self.recipients, "No recipients have been added"
-        assert self.body or self.html, "No body or HTML has been set"
         assert self.sender, "No sender address has been set"
 
         if self.has_bad_headers():
