@@ -3,6 +3,14 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+Version 0.7.4
+-------------
+
+Released November 20th 2012
+
+- Allow messages to be sent without a body
+
+
 Version 0.7.3
 -------------
 
