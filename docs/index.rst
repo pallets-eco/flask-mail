@@ -25,7 +25,7 @@ Install with **pip** and **easy_install**::
 
 or download the latest version from version control::
 
-    git clone https://github.com/rduplain/flask-mail.git
+    git clone https://github.com/mattupstate/flask-mail.git
     cd flask-mail
     python setup.py install
 
@@ -239,4 +239,4 @@ API
    :members: attach, add_recipient
 
 .. _Flask: http://flask.pocoo.org
-.. _GitHub: http://github.com/rduplain/flask-mail
+.. _GitHub: http://github.com/mattupstate/flask-mail
