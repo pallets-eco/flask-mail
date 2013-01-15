@@ -131,7 +131,7 @@ class TestMessage(TestCase):
                       bcc=["tosomeoneelse@example.com"])
 
         response = msg.as_string()
-        self.assertIn("Bcc: tosomeoneelse@example.com", str(response))
+        self.assertNotIn("tosomeoneelse@example.com", str(response))
 
     def test_cc(self):
 
