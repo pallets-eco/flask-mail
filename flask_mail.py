@@ -244,9 +244,6 @@ class Message(object):
         # see RFC 5322 section 3.6.4.
         msg['Message-ID'] = self.msgId
 
-        if self.bcc:
-            msg['Bcc'] = ', '.join(self.bcc)
-
         if self.cc:
             msg['Cc'] = ', '.join(self.cc)
 
