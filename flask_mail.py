@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
     flaskext.mail
     ~~~~~~~~~~~~~
@@ -17,15 +16,73 @@ import smtplib
 import socket
 import time
 
+from email import charset
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import formatdate, make_msgid
+from email.header import Header
+from email.utils import formatdate, formataddr, make_msgid, parseaddr
 from contextlib import contextmanager
 
 from flask import current_app
 
+class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
+    def __init__(self, obj, *args):
+        self.obj = obj
+        UnicodeDecodeError.__init__(self, *args)
+
+    def __str__(self):
+        original = UnicodeDecodeError.__str__(self)
+
+        return '%s. You passed in %r (%s)' % (original, self.obj, type(self.obj))
+
+def force_text(s, encoding='utf-8', errors='stricts'):
+    if isinstance(s, unicode):
+        return s
+
+    try:
+        if not isinstance(s, basestring):
+            if hasattr(s, '__unicode__'):
+                s = s.__unicode__()
+            else:
+                s = unicode(bytes(s), encoding, errors)
+        else:
+            s = s.decode(encoding, errors)
+    except UnicodeDecodeError as e:
+        if not isinstance(s, Exception):
+            raise FlaskMailUnicodeDecodeError(s, *e.args)
+        else:
+            s = ' '.join([force_text(arg, encoding, errors) for arg in s])
+
+    return s
+
+def sanitize_address(addr, encoding):
+    if isinstance(addr, basestring):
+        addr = parseaddr(force_text(addr))
+
+    nm, addr = addr
+
+    # This try-except clause is needed on Python 3 < 3.2.4
+    # http://bugs.python.org/issue14291
+
+    try:
+        nm = Header(nm, encoding).encode()
+    except UnicodeEncodeError:
+        nm = Header(nm, 'utf-8').encode()
+
+    try:
+        addr.encode('ascii')
+    except UnicodeEncodeError:  # IDN
+        if '@' in addr:
+            localpart, domain = addr.split('@', 1)
+            localpart = str(Header(localpart, encoding))
+            domain = domain.encode('idna').decode('ascii')
+            addr = '@'.join([localpart, domain])
+        else:
+            addr = Header(addr, encoding).encode()
+
+    return formataddr((nm, addr))
 
 class Connection(object):
 
@@ -114,7 +171,6 @@ class Connection(object):
 
         self.send(Message(*args, **kwargs))
 
-
 class BadHeaderError(Exception):
     pass
 
@@ -140,7 +196,6 @@ class Attachment(object):
         self.data = data
         self.disposition = disposition or 'attachment'
         self.headers = headers or {}
-
 
 class Message(object):
 
@@ -182,7 +237,7 @@ class Message(object):
             sender = "%s <%s>" % sender
 
         self.subject = subject
-        self.sender = sender
+        self.sender = sanitize_address(sender)
         self.body = body
         self.html = html
         self.date = date
@@ -190,14 +245,14 @@ class Message(object):
         self.charset = charset
         self.extra_headers = extra_headers
 
-        self.cc = cc
-        self.bcc = bcc
-        self.reply_to = reply_to
+        self.cc = sanitize_address(cc)
+        self.bcc = sanitize_address(bcc)
+        self.reply_to = sanitize_address(reply_to)
 
         if recipients is None:
             recipients = []
 
-        self.recipients = list(recipients)
+        self.recipients = list([sanitize_address(recipient) for recipient in recipients])
 
         if attachments is None:
             attachments = []
