@@ -27,7 +27,7 @@ from contextlib import contextmanager
 
 from flask import current_app
 
-Charset.add_charset('utf-8', Charset.SHORTEST, None, 'utf-8')
+charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
 
 class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self, obj, *args):
