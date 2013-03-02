@@ -247,9 +247,9 @@ class Message(object):
         self.charset = charset
         self.extra_headers = extra_headers
 
-        self.cc = sanitize_address(cc)
-        self.bcc = sanitize_address(bcc)
-        self.reply_to = sanitize_address(reply_to)
+        self.cc = sanitize_address(cc) if cc is not None else None
+        self.bcc = sanitize_address(bcc) if bcc is not None else None
+        self.reply_to = sanitize_address(reply_to) if reply_to is not None else None
 
         if recipients is None:
             recipients = []
