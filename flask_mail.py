@@ -27,6 +27,8 @@ from contextlib import contextmanager
 
 from flask import current_app
 
+Charset.add_charset('utf-8', Charset.SHORTEST, None, 'utf-8')
+
 class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self, obj, *args):
         self.obj = obj
@@ -57,7 +59,7 @@ def force_text(s, encoding='utf-8', errors='stricts'):
 
     return s
 
-def sanitize_address(addr, encoding):
+def sanitize_address(addr, encoding='utf-8'):
     if isinstance(addr, basestring):
         addr = parseaddr(force_text(addr))
 
