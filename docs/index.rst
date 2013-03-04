@@ -56,7 +56,7 @@ options (each is explained later in the documentation):
 
 * **DEFAULT_MAX_EMAILS** : default **None**
 
-* **MAIL_FAIL_SILENTLY** : default **True**
+* **MAIL_FAIL_SILENTLY** : default **False**
 
 * **MAIL_SUPPRESS_SEND** : default **False**
 git
