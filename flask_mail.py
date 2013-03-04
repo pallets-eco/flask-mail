@@ -236,7 +236,7 @@ class Message(object):
 
         if isinstance(sender, tuple):
             # sender can be tuple of (name, address)
-            sender = "%s <%s>" % sender
+            sender = ("%s <%s>" % sender).encode('utf-8')
 
         self.subject = subject
         self.sender = sanitize_address(sender)
