@@ -3,6 +3,16 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+Version 0.7.5
+-------------
+
+Release March 03 2013
+
+- Fix bug with non-ascii characters in email address
+- MAIL_FAIL_SILENTLY config value defaults to False
+- Bcc header no longer set as some mail servers forward it to the recipient
+
+
 Version 0.7.4
 -------------
 

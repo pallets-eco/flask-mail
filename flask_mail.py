@@ -421,7 +421,7 @@ class Mail(object):
         self.debug = int(app.config.get('MAIL_DEBUG', app.debug))
         self.max_emails = app.config.get('DEFAULT_MAX_EMAILS')
         self.suppress = app.config.get('MAIL_SUPPRESS_SEND', False)
-        self.fail_silently = app.config.get('MAIL_FAIL_SILENTLY', True)
+        self.fail_silently = app.config.get('MAIL_FAIL_SILENTLY', False)
 
         self.suppress = self.suppress or app.testing
         self.app = app
