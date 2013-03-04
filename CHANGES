@@ -6,7 +6,7 @@ Here you can see the full list of changes between each Flask-Mail release.
 Version 0.7.5
 -------------
 
-Release March 03 2013
+Released March 03 2013
 
 - Fix bug with non-ascii characters in email address
 - MAIL_FAIL_SILENTLY config value defaults to False
