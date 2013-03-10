@@ -247,17 +247,17 @@ class Message(object):
         self.charset = charset
         self.extra_headers = extra_headers
 
-        self.cc = sanitize_address(cc) if cc is not None else None
-        self.bcc = sanitize_address(bcc) if bcc is not None else None
+        cc = [] if cc is None else cc
+        bcc = [] if bcc is None else bcc
+
+        self.cc = [sanitize_address(c) for c in cc]
+        self.bcc = [sanitize_address(b) for b in bcc]
         self.reply_to = sanitize_address(reply_to) if reply_to is not None else None
 
-        if recipients is None:
-            recipients = []
+        recipients = [] if recipients is None else recipients
+        self.recipients = [sanitize_address(recipient) for recipient in recipients]
 
-        self.recipients = list([sanitize_address(recipient) for recipient in recipients])
-
-        if attachments is None:
-            attachments = []
+        attachments = [] if attachments is None else attachments
 
         self.attachments = attachments
 
