@@ -3,6 +3,14 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+Version 0.7.6
+-------------
+
+Released March 11 2013
+
+- Fix bug with cc, and bcc fields not being lists
+
+
 Version 0.7.5
 -------------
 

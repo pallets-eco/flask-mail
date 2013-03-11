@@ -7,6 +7,7 @@
     :copyright: (c) 2010 by Dan Jacob.
     :license: BSD, see LICENSE for more details.
 """
+
 from __future__ import with_statement
 
 __version__ = '0.7.5'
@@ -29,6 +30,7 @@ from flask import current_app
 
 charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
 
+
 class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self, obj, *args):
         self.obj = obj
@@ -36,13 +38,12 @@ class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
 
     def __str__(self):
         original = UnicodeDecodeError.__str__(self)
-
         return '%s. You passed in %r (%s)' % (original, self.obj, type(self.obj))
+
 
 def force_text(s, encoding='utf-8', errors='stricts'):
     if isinstance(s, unicode):
         return s
-
     try:
         if not isinstance(s, basestring):
             if hasattr(s, '__unicode__'):
@@ -56,18 +57,16 @@ def force_text(s, encoding='utf-8', errors='stricts'):
             raise FlaskMailUnicodeDecodeError(s, *e.args)
         else:
             s = ' '.join([force_text(arg, encoding, errors) for arg in s])
-
     return s
+
 
 def sanitize_address(addr, encoding='utf-8'):
     if isinstance(addr, basestring):
         addr = parseaddr(force_text(addr))
-
     nm, addr = addr
 
     # This try-except clause is needed on Python 3 < 3.2.4
     # http://bugs.python.org/issue14291
-
     try:
         nm = Header(nm, encoding).encode()
     except UnicodeEncodeError:
@@ -83,15 +82,17 @@ def sanitize_address(addr, encoding='utf-8'):
             addr = '@'.join([localpart, domain])
         else:
             addr = Header(addr, encoding).encode()
-
     return formataddr((nm, addr))
 
-class Connection(object):
 
+def sanitize_addresses(addresses):
+    return map(lambda e: sanitize_address(e), addresses)
+
+
+class Connection(object):
     """Handles connection to host."""
 
     def __init__(self, mail, max_emails=None):
-
         self.mail = mail
         self.app = self.mail.app
         self.suppress = self.mail.suppress
@@ -99,7 +100,6 @@ class Connection(object):
         self.fail_silently = self.mail.fail_silently
 
     def __enter__(self):
-
         if self.suppress:
             self.host = None
         else:
@@ -114,7 +114,6 @@ class Connection(object):
             self.host.quit()
 
     def configure_host(self):
-
         try:
             if self.mail.use_ssl:
                 host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
@@ -135,8 +134,7 @@ class Connection(object):
         return host
 
     def send(self, message):
-        """
-        Sends message.
+        """Sends message.
 
         :param message: Message instance.
         """
@@ -155,31 +153,28 @@ class Connection(object):
         self.num_emails += 1
 
         if self.num_emails == self.max_emails:
-
             self.num_emails = 0
             if self.host:
                 self.host.quit()
                 self.host = self.configure_host()
 
     def send_message(self, *args, **kwargs):
-        """
-        Shortcut for send(msg).
+        """Shortcut for send(msg).
 
         Takes same arguments as Message constructor.
 
         :versionadded: 0.3.5
-
         """
 
         self.send(Message(*args, **kwargs))
+
 
 class BadHeaderError(Exception):
     pass
 
 
 class Attachment(object):
-    """
-    Encapsulates file attachment information.
+    """Encapsulates file attachment information.
 
     :versionadded: 0.3.5
 
@@ -187,22 +182,19 @@ class Attachment(object):
     :param content_type: file mimetype
     :param data: the raw file data
     :param disposition: content-disposition (if any)
-
     """
 
     def __init__(self, filename=None, content_type=None, data=None,
-        disposition=None, headers=None):
-
+                 disposition=None, headers=None):
         self.filename = filename
         self.content_type = content_type
         self.data = data
         self.disposition = disposition or 'attachment'
         self.headers = headers or {}
 
-class Message(object):
 
-    """
-    Encapsulates an email message.
+class Message(object):
+    """Encapsulates an email message.
 
     :param subject: email subject header
     :param recipients: list of email addresses
@@ -231,59 +223,45 @@ class Message(object):
                  charset=None,
                  extra_headers=None):
 
-        if sender is None:
-            sender = current_app.config.get("DEFAULT_MAIL_SENDER")
+        sender = sender or current_app.config.get("DEFAULT_MAIL_SENDER")
 
         if isinstance(sender, tuple):
-            # sender can be tuple of (name, address)
             sender = "%s <%s>" % sender
 
+        self.recipients = recipients or []
         self.subject = subject
-        self.sender = sanitize_address(sender)
+        self.sender = sender
+        self.reply_to = reply_to
+        self.cc = cc or []
+        self.bcc = bcc or []
         self.body = body
         self.html = html
         self.date = date
         self.msgId = make_msgid()
         self.charset = charset
         self.extra_headers = extra_headers
-
-        cc = cc or []
-        bcc = bcc or []
-
-        self.cc = [sanitize_address(c) for c in cc]
-        self.bcc = [sanitize_address(b) for b in bcc]
-        if reply_to:
-            reply_to = sanitize_address(reply_to)
-        self.reply_to = reply_to
-
-        recipients = recipients or []
-        self.recipients = [sanitize_address(recipient) for recipient in recipients]
-
-        attachments = attachments or []
-
-        self.attachments = attachments
+        self.attachments = attachments or []
 
     @property
     def send_to(self):
         return set(self.recipients) | set(self.bcc or ()) | set(self.cc or ())
 
     def _mimetext(self, text, subtype='plain'):
-        """
-        Creates a MIMEText object with the given subtype (default: 'plain')
+        """Creates a MIMEText object with the given subtype (default: 'plain')
         If the text is unicode, the utf-8 charset is used.
         """
         charset = self.charset or 'utf-8'
         return MIMEText(text, _subtype=subtype, _charset=charset)
 
     def as_string(self):
-        """
-        Creates the email
-        """
+        """Creates the email"""
 
-        if len(self.attachments) == 0 and not self.html:
+        attachments = self.attachments or []
+
+        if len(attachments) == 0 and not self.html:
             # No html content and zero attachments means plain text
             msg = self._mimetext(self.body)
-        elif len(self.attachments) > 0 and not self.html:
+        elif len(attachments) > 0 and not self.html:
             # No html and at least one attachment means multipart
             msg = MIMEMultipart()
             msg.attach(self._mimetext(self.body))
@@ -296,24 +274,24 @@ class Message(object):
             msg.attach(alternative)
 
         msg['Subject'] = self.subject
-        msg['From'] = self.sender
-        msg['To'] = ', '.join(self.recipients)
+        msg['From'] = sanitize_address(self.sender)
+        msg['To'] = ', '.join(sanitize_addresses(self.recipients))
 
         msg['Date'] = formatdate(self.date, localtime=True)
         # see RFC 5322 section 3.6.4.
         msg['Message-ID'] = self.msgId
 
         if self.cc:
-            msg['Cc'] = ', '.join(self.cc)
+            msg['Cc'] = ', '.join(sanitize_addresses(self.cc))
 
         if self.reply_to:
-            msg['Reply-To'] = self.reply_to
+            msg['Reply-To'] = sanitize_address(self.reply_to)
 
         if self.extra_headers:
             for k, v in self.extra_headers.iteritems():
                 msg[k] = v
 
-        for attachment in self.attachments:
+        for attachment in attachments:
             f = MIMEBase(*attachment.content_type.split('/'))
             f.set_payload(attachment.data)
             encode_base64(f)
@@ -332,8 +310,7 @@ class Message(object):
         return self.as_string()
 
     def has_bad_headers(self):
-        """
-        Checks for bad headers i.e. newlines in subject, sender or recipients.
+        """Checks for bad headers i.e. newlines in subject, sender or recipients.
         """
 
         reply_to = self.reply_to or ''
@@ -345,14 +322,12 @@ class Message(object):
 
     def is_bad_headers(self):
         from warnings import warn
-        warn(DeprecationWarning('is_bad_headers is deprecated, use the '
-            'new has_bad_headers method instead.'), stacklevel=1)
+        msg = 'is_bad_headers is deprecated, use the new has_bad_headers method instead.'
+        warn(DeprecationWarning(msg), stacklevel=1)
         return self.has_bad_headers()
 
     def send(self, connection):
-        """
-        Verifies and sends the message.
-        """
+        """Verifies and sends the message."""
 
         assert self.recipients, "No recipients have been added"
         assert self.sender, "No sender address has been set"
@@ -363,8 +338,7 @@ class Message(object):
         connection.send(self)
 
     def add_recipient(self, recipient):
-        """
-        Adds another recipient to the message.
+        """Adds another recipient to the message.
 
         :param recipient: email address of recipient.
         """
@@ -377,9 +351,7 @@ class Message(object):
                data=None,
                disposition=None,
                headers=None):
-
-        """
-        Adds an attachment to the message.
+        """Adds an attachment to the message.
 
         :param filename: filename of attachment
         :param content_type: file mimetype
@@ -392,21 +364,17 @@ class Message(object):
 
 
 class Mail(object):
-    """
-    Manages email messaging
+    """Manages email messaging
 
     :param app: Flask instance
     """
 
     def __init__(self, app=None):
-
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app):
-        """
-        Initializes your mail settings from the application
-        settings.
+        """Initializes your mail settings from the application settings.
 
         You can use this if you want to set up your Mail instance
         at configuration time.
@@ -434,8 +402,7 @@ class Mail(object):
 
     @contextmanager
     def record_messages(self):
-        """
-        Records all messages. Use in unit tests for example::
+        """Records all messages. Use in unit tests for example::
 
             with mail.record_messages() as outbox:
                 response = app.test_client.get("/email-sending-view/")
@@ -462,9 +429,8 @@ class Mail(object):
             email_dispatched.disconnect(_record)
 
     def send(self, message):
-        """
-        Sends a single message instance. If TESTING is True
-        the message will not actually be sent.
+        """Sends a single message instance. If TESTING is True the message will
+        not actually be sent.
 
         :param message: a Message instance.
         """
@@ -473,8 +439,7 @@ class Mail(object):
             message.send(connection)
 
     def send_message(self, *args, **kwargs):
-        """
-        Shortcut for send(msg).
+        """Shortcut for send(msg).
 
         Takes same arguments as Message constructor.
 
@@ -484,8 +449,7 @@ class Mail(object):
         self.send(Message(*args, **kwargs))
 
     def connect(self, max_emails=None):
-        """
-        Opens a connection to the mail host.
+        """Opens a connection to the mail host.
 
         :param max_emails: the maximum number of emails that can
                            be sent in a single connection. If this
@@ -494,6 +458,7 @@ class Mail(object):
                            DEFAULT_MAX_EMAILS config setting is used
                            if this is None.
         """
+
         return Connection(self, max_emails)
 
 
