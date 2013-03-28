@@ -18,6 +18,7 @@ import socket
 import time
 
 from email import charset
+from email.header import Header
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -252,6 +253,28 @@ class Message(object):
         """
         charset = self.charset or 'utf-8'
         return MIMEText(text, _subtype=subtype, _charset=charset)
+
+    def _encode_identity(self, identity):
+        """
+        Since stdlib's email module doesn't handle it well, encode the
+        identities here. Identity can be an email, have a form of a tuple
+        (name, email) or a string "name <email>"
+        """
+        if isinstance(identity, tuple):
+            name = identity[0]
+            email = identity[1]
+        elif identity and ' <' in identity:
+            name = identity[:identity.rfind(' <')]
+            email = identity[identity.rfind(' <') + 2 : identity.rfind('>')]
+        else:
+            return identity
+
+        try:
+            name.decode('ascii')
+        except UnicodeEncodeError:
+            name = Header(name).encode()
+
+        return '%s <%s>' % (name, email)
 
     def as_string(self):
         """Creates the email"""

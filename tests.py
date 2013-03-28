@@ -239,11 +239,19 @@ class TestMessage(TestCase):
         self.assertIsNotNone(r)
         self.assertIn('Message-ID: ' + msg.msgId, msg.as_string())
 
-    def test_unicode_sender(self):
+    def test_unicode_sender_tuple(self):
         msg = Message(subject="subject",
                       sender=(u"ÄÜÖ → ✓", 'from@example.com>'),
                       recipients=["to@example.com"])
-        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?=', msg.as_string())
+
+        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <from@example.com>>', msg.as_string())
+
+    def test_unicode_sender(self):
+        msg = Message(subject="subject",
+                sender=u'ÄÜÖ → ✓ <from@example.com>>',
+                recipients=["to@example.com"])
+
+        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <from@example.com>>', msg.as_string())
 
     def test_extra_headers(self):
         msg = Message(subject="subject",
