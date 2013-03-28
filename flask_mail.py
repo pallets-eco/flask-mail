@@ -255,6 +255,9 @@ class Message(object):
         charset = self.charset or 'utf-8'
         return MIMEText(text, _subtype=subtype, _charset=charset)
 
+    def _encode_identities(self, identities=[]):
+        return list(set([self._encode_identity(identity) for identity in identities]))
+
     def _encode_identity(self, identity):
         """
         Since stdlib's email module doesn't handle it well, encode the
@@ -265,7 +268,7 @@ class Message(object):
         if isinstance(identity, tuple):
             name = identity[0]
             email = identity[1]
-        elif identity:
+        elif identity and identity.strip():
             addr_list = AddressList(identity)
             name = addr_list[0][0]
             email = addr_list[0][1]

@@ -141,7 +141,10 @@ class TestMessage(TestCase):
                       reply_to="evil@example.com\n\r",
                       recipients=["to@example.com"],
                       body="testing")
-        self.assertRaises(BadHeaderError, self.mail.send, msg)
+
+        self.assertIn('From: from@example.com', msg.as_string())
+        self.assertIn('To: to@example.com', msg.as_string())
+        self.assertIn('Reply-To: evil@example.com', msg.as_string())
 
     def test_bad_header_recipient(self):
         msg = Message(subject="testing",
@@ -150,7 +153,8 @@ class TestMessage(TestCase):
                           "to@example.com",
                           "to\r\n@example.com"],
                       body="testing")
-        self.assertRaises(BadHeaderError, self.mail.send, msg)
+
+        self.assertIn('To: to@example.com\n', msg.as_string())
 
     def test_emails_are_sanitized(self):
         msg = Message(subject="testing",
@@ -249,10 +253,20 @@ class TestMessage(TestCase):
 
     def test_unicode_sender(self):
         msg = Message(subject="subject",
-                sender=u'ÄÜÖ → ✓ <from@example.com>>',
-                recipients=["to@example.com"])
+                      sender=u'ÄÜÖ → ✓ <from@example.com>>',
+                      recipients=["to@example.com"])
 
         self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <from@example.com>', msg.as_string())
+
+    def test_unicode_headers(self):
+        msg = Message(subject="subject",
+                      sender=u'ÄÜÖ → ✓ <from@example.com>',
+                      recipients=[u"Ä <t1@example.com>", u"Ü <t2@example.com>"],
+                      cc=[u"Ö <cc@example.com>"])
+
+        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <from@example.com>', msg.as_string())
+        self.assertIn('To: =?utf-8?b?w4Q=?= <t1@example.com>, =?utf-8?b?w5w=?= <t2@example.com>', msg.as_string())
+        self.assertIn('Cc: =?utf-8?b?w5Y=?= <cc@example.com>', msg.as_string())
 
     def test_extra_headers(self):
         msg = Message(subject="subject",
