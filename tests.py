@@ -132,7 +132,8 @@ class TestMessage(TestCase):
                       sender="from@example.com\n\r",
                       recipients=["to@example.com"],
                       body="testing")
-        self.assertRaises(BadHeaderError, self.mail.send, msg)
+
+        self.assertIn('From: from@example.com', msg.as_string())
 
     def test_bad_header_reply_to(self):
         msg = Message(subject="testing",
@@ -244,14 +245,14 @@ class TestMessage(TestCase):
                       sender=(u"ÄÜÖ → ✓", 'from@example.com>'),
                       recipients=["to@example.com"])
 
-        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <from@example.com>>', msg.as_string())
+        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <from@example.com>', msg.as_string())
 
     def test_unicode_sender(self):
         msg = Message(subject="subject",
                 sender=u'ÄÜÖ → ✓ <from@example.com>>',
                 recipients=["to@example.com"])
 
-        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <from@example.com>>', msg.as_string())
+        self.assertIn('From: =?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <from@example.com>', msg.as_string())
 
     def test_extra_headers(self):
         msg = Message(subject="subject",

@@ -26,6 +26,7 @@ from email.mime.text import MIMEText
 from email.header import Header
 from email.utils import formatdate, formataddr, make_msgid, parseaddr
 from contextlib import contextmanager
+from rfc822 import AddressList
 
 from flask import current_app
 
@@ -260,12 +261,14 @@ class Message(object):
         identities here. Identity can be an email, have a form of a tuple
         (name, email) or a string "name <email>"
         """
+
         if isinstance(identity, tuple):
             name = identity[0]
             email = identity[1]
-        elif identity and ' <' in identity:
-            name = identity[:identity.rfind(' <')]
-            email = identity[identity.rfind(' <') + 2 : identity.rfind('>')]
+        elif identity:
+            addr_list = AddressList(identity)
+            name = addr_list[0][0]
+            email = addr_list[0][1]
         else:
             return identity
 
@@ -274,7 +277,7 @@ class Message(object):
         except UnicodeEncodeError:
             name = Header(name).encode()
 
-        return '%s <%s>' % (name, email)
+        return '%s <%s>' % (name, email) if name else email
 
     def as_string(self):
         """Creates the email"""
