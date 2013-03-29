@@ -18,7 +18,6 @@ import socket
 import time
 
 from email import charset
-from email.header import Header
 from email.encoders import encode_base64
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
