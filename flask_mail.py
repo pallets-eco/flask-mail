@@ -275,14 +275,14 @@ class Message(object):
 
         msg['Subject'] = self.subject
         msg['From'] = sanitize_address(self.sender)
-        msg['To'] = ', '.join(sanitize_addresses(self.recipients))
+        msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients))))
 
         msg['Date'] = formatdate(self.date, localtime=True)
         # see RFC 5322 section 3.6.4.
         msg['Message-ID'] = self.msgId
 
         if self.cc:
-            msg['Cc'] = ', '.join(sanitize_addresses(self.cc))
+            msg['Cc'] = ', '.join(list(set(sanitize_addresses(self.cc))))
 
         if self.reply_to:
             msg['Reply-To'] = sanitize_address(self.reply_to)
