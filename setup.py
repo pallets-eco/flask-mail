@@ -16,7 +16,7 @@ from setuptools import setup
 
 setup(
     name='Flask-Mail',
-    version='0.7.6',
+    version='0.8.0',
     url='https://github.com/rduplain/flask-mail',
     license='BSD',
     author='Dan Jacob',
