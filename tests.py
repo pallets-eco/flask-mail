@@ -28,6 +28,21 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         self.ctx.pop()
 
+    def assertIn(self, member, container, msg=None):
+        if hasattr(unittest.TestCase, 'assertIn'):
+            return unittest.TestCase.assertIn(self, member, container, msg)
+        return self.assertTrue(member in container)
+
+    def assertNotIn(self, member, container, msg=None):
+        if hasattr(unittest.TestCase, 'assertNotIn'):
+            return unittest.TestCase.assertNotIn(self, member, container, msg)
+        return self.assertFalse(member in container)
+
+    def assertIsNotNone(self, obj, msg=None):
+        if hasattr(unittest.TestCase, 'assertIsNotNone'):
+            return unittest.TestCase.assertIsNotNone(self, obj, msg)
+        return self.assertTrue(obj is not None)
+
 
 class TestMessage(TestCase):
 
