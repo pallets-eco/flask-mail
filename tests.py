@@ -15,7 +15,7 @@ from flask_mail import Mail, Message, BadHeaderError
 class TestCase(unittest.TestCase):
 
     TESTING = True
-    DEFAULT_MAIL_SENDER = "support@mysite.com"
+    MAIL_DEFAULT_SENDER = "support@mysite.com"
 
     def setUp(self):
         self.app = Flask(__name__)
@@ -54,7 +54,7 @@ class TestMessage(TestCase):
     def test_initialize(self):
         msg = Message(subject="subject",
                       recipients=["to@example.com"])
-        self.assertEqual(msg.sender, "support@mysite.com")
+        self.assertEqual(msg.sender, None)
         self.assertEqual(msg.recipients, ["to@example.com"])
 
     def test_recipients_properly_initialized(self):
@@ -91,7 +91,7 @@ class TestMessage(TestCase):
         self.assertIn("Reply-To: somebody <somebody@example.com>", str(response))
 
     def test_send_without_sender(self):
-        del self.app.config['DEFAULT_MAIL_SENDER']
+        self.app.extensions['mail'].default_sender = None
         msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
         self.assertRaises(AssertionError, self.mail.send, msg)
 
@@ -101,19 +101,9 @@ class TestMessage(TestCase):
                       body="testing")
         self.assertRaises(AssertionError, self.mail.send, msg)
 
-    def test_fail_silently(self):
-        self.app.config['MAIL_FAIL_SILENTLY'] = True
-        self.mail.init_app(self.app)
-        with self.mail.record_messages() as outbox:
-            msg = Message(subject="testing",
-                          recipients=["to@example.com"],
-                          body="testing")
-            self.mail.send(msg)
-            self.assertEqual(len(outbox), 1)
-        self.app.config['MAIL_FAIL_SILENTLY'] = False
-
     def test_bcc(self):
-        msg = Message(subject="testing",
+        msg = Message(sender="from@example.com",
+                      subject="testing",
                       recipients=["to@example.com"],
                       body="testing",
                       bcc=["tosomeoneelse@example.com"])
@@ -121,7 +111,8 @@ class TestMessage(TestCase):
         self.assertNotIn("tosomeoneelse@example.com", str(response))
 
     def test_cc(self):
-        msg = Message(subject="testing",
+        msg = Message(sender="from@example.com",
+                      subject="testing",
                       recipients=["to@example.com"],
                       body="testing",
                       cc=["tosomeoneelse@example.com"])
@@ -187,20 +178,23 @@ class TestMessage(TestCase):
 
     def test_plain_message(self):
         plain_text = "Hello Joe,\nHow are you?"
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["to@example.com"],
                       body=plain_text)
         self.assertEqual(plain_text, msg.body)
         self.assertIn('Content-Type: text/plain', msg.as_string())
 
     def test_message_str(self):
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["to@example.com"],
                       body="some plain text")
         self.assertEqual(msg.as_string(), str(msg))
 
     def test_plain_message_with_attachments(self):
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["to@example.com"],
                       body="hello")
 
@@ -211,7 +205,8 @@ class TestMessage(TestCase):
 
     def test_html_message(self):
         html_text = "<p>Hello World</p>"
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["to@example.com"],
                       html=html_text)
 
@@ -221,7 +216,8 @@ class TestMessage(TestCase):
     def test_html_message_with_attachments(self):
         html_text = "<p>Hello World</p>"
         plain_text = 'Hello World'
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["to@example.com"],
                       body=plain_text,
                       html=html_text)
@@ -244,7 +240,8 @@ class TestMessage(TestCase):
 
     def test_date_header(self):
         before = time.time()
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["to@example.com"],
                       body="hello",
                       date=time.time())
@@ -255,7 +252,8 @@ class TestMessage(TestCase):
         self.assertIn('Date: ' + dateFormatted, msg.as_string())
 
     def test_msgid_header(self):
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["to@example.com"],
                       body="hello")
 
@@ -289,14 +287,16 @@ class TestMessage(TestCase):
         self.assertIn('Cc: =?utf-8?b?w5Y=?= <cc@example.com>', msg.as_string())
 
     def test_extra_headers(self):
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["to@example.com"],
                       body="hello",
                       extra_headers={'X-Extra-Header': 'Yes'})
         self.assertIn('X-Extra-Header: Yes', msg.as_string())
 
     def test_message_charset(self):
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["foo@bar.com"],
                       charset='us-ascii')
 
@@ -305,7 +305,8 @@ class TestMessage(TestCase):
         self.assertIn('Content-Type: text/plain; charset="us-ascii"', msg.as_string())
 
         # ascii html
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["foo@bar.com"],
                       charset='us-ascii')
         msg.body = None
@@ -313,20 +314,23 @@ class TestMessage(TestCase):
         self.assertIn('Content-Type: text/html; charset="us-ascii"', msg.as_string())
 
         # unicode body
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["foo@bar.com"])
         msg.body = u"ünicöde ←→ ✓"
         self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
 
         # unicode body and unicode html
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["foo@bar.com"])
         msg.html = u"ünicöde ←→ ✓"
         self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
         self.assertIn('Content-Type: text/html; charset="utf-8"', msg.as_string())
 
         # unicode body and attachments
-        msg = Message(subject="subject",
+        msg = Message(sender="from@example.com",
+                      subject="subject",
                       recipients=["foo@bar.com"])
         msg.html = None
         msg.attach(data="foobar", content_type='text/csv')
@@ -385,16 +389,4 @@ class TestConnection(TestCase):
                                   recipients=["to@example.com"],
                                   body="testing")
                     conn.send(msg)
-            self.assertEqual(len(outbox), 100)
-
-    def test_max_emails(self):
-        with self.mail.record_messages() as outbox:
-            with self.mail.connect(max_emails=10) as conn:
-                for i in xrange(100):
-                    msg = Message(subject="testing",
-                                  recipients=["to@example.com"],
-                                  body="testing")
-                    conn.send(msg)
-                    if i % 10 == 0:
-                        self.assertEqual(conn.num_emails, 1)
             self.assertEqual(len(outbox), 100)

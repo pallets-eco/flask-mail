@@ -15,7 +15,6 @@ __version__ = '0.7.7-dev'
 
 import blinker
 import smtplib
-import socket
 import time
 
 from email import charset
@@ -93,15 +92,11 @@ def sanitize_addresses(addresses):
 class Connection(object):
     """Handles connection to host."""
 
-    def __init__(self, mail, max_emails=None):
+    def __init__(self, mail):
         self.mail = mail
-        self.app = self.mail.app
-        self.suppress = self.mail.suppress
-        self.max_emails = max_emails or self.mail.max_emails or 0
-        self.fail_silently = self.mail.fail_silently
 
     def __enter__(self):
-        if self.suppress:
+        if self.mail.suppress:
             self.host = None
         else:
             self.host = self.configure_host()
@@ -115,15 +110,10 @@ class Connection(object):
             self.host.quit()
 
     def configure_host(self):
-        try:
-            if self.mail.use_ssl:
-                host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
-            else:
-                host = smtplib.SMTP(self.mail.server, self.mail.port)
-        except socket.error:
-            if self.fail_silently:
-                return
-            raise
+        if self.mail.use_ssl:
+            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
+        else:
+            host = smtplib.SMTP(self.mail.server, self.mail.port)
 
         host.set_debuglevel(int(self.mail.debug))
 
@@ -148,12 +138,11 @@ class Connection(object):
                                message.send_to,
                                message.as_string())
 
-        if email_dispatched:
-            email_dispatched.send(message, app=self.app)
+        email_dispatched.send(message, app=current_app._get_current_object())
 
         self.num_emails += 1
 
-        if self.num_emails == self.max_emails:
+        if self.num_emails == self.mail.max_emails:
             self.num_emails = 0
             if self.host:
                 self.host.quit()
@@ -201,7 +190,7 @@ class Message(object):
     :param recipients: list of email addresses
     :param body: plain text message
     :param html: HTML message
-    :param sender: email sender address, or **DEFAULT_MAIL_SENDER** by default
+    :param sender: email sender address, or **MAIL_DEFAULT_SENDER** by default
     :param cc: CC list
     :param bcc: BCC list
     :param attachments: list of Attachment instances
@@ -224,7 +213,7 @@ class Message(object):
                  charset=None,
                  extra_headers=None):
 
-        sender = sender or current_app.config.get("DEFAULT_MAIL_SENDER")
+        sender = sender
 
         if isinstance(sender, tuple):
             sender = "%s <%s>" % sender
@@ -331,7 +320,14 @@ class Message(object):
         """Verifies and sends the message."""
 
         assert self.recipients, "No recipients have been added"
-        assert self.sender, "No sender address has been set"
+
+        if not self.sender:
+            self.sender = current_app.extensions['mail'].default_sender
+            assert self.sender, (
+                "The message does not specify a sender and a default sender "
+                "has not been configured")
+
+        assert self.sender, "The message does not specify a sender address"
 
         if self.has_bad_headers():
             raise BadHeaderError
@@ -364,6 +360,21 @@ class Message(object):
             Attachment(filename, content_type, data, disposition, headers))
 
 
+class _Mail(object):
+    def __init__(self, server, username, password, port, use_tls, use_ssl,
+                 default_sender, debug, max_emails, suppress):
+        self.server = server
+        self.username = username
+        self.password = password
+        self.port = port
+        self.use_tls = use_tls
+        self.use_ssl = use_ssl
+        self.default_sender = default_sender
+        self.debug = debug
+        self.max_emails = max_emails
+        self.suppress = suppress
+
+
 class Mail(object):
     """Manages email messaging
 
@@ -371,6 +382,7 @@ class Mail(object):
     """
 
     def __init__(self, app=None):
+        self.app = app
         if app is not None:
             self.init_app(app)
 
@@ -383,23 +395,21 @@ class Mail(object):
         :param app: Flask application instance
         """
 
-        self.server = app.config.get('MAIL_SERVER', '127.0.0.1')
-        self.username = app.config.get('MAIL_USERNAME')
-        self.password = app.config.get('MAIL_PASSWORD')
-        self.port = app.config.get('MAIL_PORT', 25)
-        self.use_tls = app.config.get('MAIL_USE_TLS', False)
-        self.use_ssl = app.config.get('MAIL_USE_SSL', False)
-        self.debug = int(app.config.get('MAIL_DEBUG', app.debug))
-        self.max_emails = app.config.get('DEFAULT_MAX_EMAILS')
-        self.suppress = app.config.get('MAIL_SUPPRESS_SEND', False)
-        self.fail_silently = app.config.get('MAIL_FAIL_SILENTLY', False)
-
-        self.suppress = self.suppress or app.testing
-        self.app = app
+        state = _Mail(
+            app.config.get('MAIL_SERVER', '127.0.0.1'),
+            app.config.get('MAIL_USERNAME'),
+            app.config.get('MAIL_PASSWORD'),
+            app.config.get('MAIL_PORT', 25),
+            app.config.get('MAIL_USE_TLS', False),
+            app.config.get('MAIL_USE_SSL', False),
+            app.config.get('MAIL_DEFAULT_SENDER'),
+            int(app.config.get('MAIL_DEBUG', app.debug)),
+            app.config.get('MAIL_MAX_EMAILS'),
+            app.config.get('MAIL_SUPPRESS_SEND', app.testing))
 
         # register extension with app
         app.extensions = getattr(app, 'extensions', {})
-        app.extensions['mail'] = self
+        app.extensions['mail'] = state
 
     @contextmanager
     def record_messages(self):
@@ -449,18 +459,13 @@ class Mail(object):
 
         self.send(Message(*args, **kwargs))
 
-    def connect(self, max_emails=None):
-        """Opens a connection to the mail host.
-
-        :param max_emails: the maximum number of emails that can
-                           be sent in a single connection. If this
-                           number is exceeded the Connection instance
-                           will reconnect to the mail server. The
-                           DEFAULT_MAX_EMAILS config setting is used
-                           if this is None.
-        """
-
-        return Connection(self, max_emails)
+    def connect(self):
+        """Opens a connection to the mail host."""
+        app = self.app or current_app
+        try:
+            return Connection(app.extensions['mail'])
+        except KeyError:
+            raise RuntimeError("The curent application was not configured with Flask-Mail")
 
 
 signals = blinker.Namespace()

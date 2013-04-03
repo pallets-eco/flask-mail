@@ -3,6 +3,16 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+Version 0.8.0
+-------------
+
+Released April 03 2013
+
+- Fixed a bug with duplicate recipients
+- Changed configuration options to be less confusing
+- General API clean as things were happening in a few different places
+
+
 Version 0.7.6
 -------------
 
