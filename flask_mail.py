@@ -10,7 +10,7 @@
 
 from __future__ import with_statement
 
-__version__ = '0.7.6'
+__version__ = '0.7.7-dev'
 
 import blinker
 import smtplib
@@ -52,7 +52,7 @@ def force_text(s, encoding='utf-8', errors='stricts'):
                 s = unicode(bytes(s), encoding, errors)
         else:
             s = s.decode(encoding, errors)
-    except UnicodeDecodeError as e:
+    except UnicodeDecodeError, e:
         if not isinstance(s, Exception):
             raise FlaskMailUnicodeDecodeError(s, *e.args)
         else:
