@@ -38,6 +38,11 @@ class TestCase(unittest.TestCase):
             return unittest.TestCase.assertNotIn(self, member, container, msg)
         return self.assertFalse(member in container)
 
+    def assertIsNone(self, obj, msg=None):
+        if hasattr(unittest.TestCase, 'assertIsNone'):
+            return unittest.TestCase.assertIsNone(self, obj, msg)
+        return self.assertTrue(obj is None)
+
     def assertIsNotNone(self, obj, msg=None):
         if hasattr(unittest.TestCase, 'assertIsNotNone'):
             return unittest.TestCase.assertIsNotNone(self, obj, msg)
