@@ -3,6 +3,14 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+Version 0.8.1
+-------------
+
+Released April 04 2013
+
+- Fixed a bug with the new state object
+
+
 Version 0.8.0
 -------------
 
