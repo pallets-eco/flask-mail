@@ -96,6 +96,7 @@ class Connection(object):
         self.mail = mail
 
     def __enter__(self):
+        print self.mail
         if self.mail.suppress:
             self.host = None
         else:
@@ -360,56 +361,7 @@ class Message(object):
             Attachment(filename, content_type, data, disposition, headers))
 
 
-class _Mail(object):
-    def __init__(self, server, username, password, port, use_tls, use_ssl,
-                 default_sender, debug, max_emails, suppress):
-        self.server = server
-        self.username = username
-        self.password = password
-        self.port = port
-        self.use_tls = use_tls
-        self.use_ssl = use_ssl
-        self.default_sender = default_sender
-        self.debug = debug
-        self.max_emails = max_emails
-        self.suppress = suppress
-
-
-class Mail(object):
-    """Manages email messaging
-
-    :param app: Flask instance
-    """
-
-    def __init__(self, app=None):
-        self.app = app
-        if app is not None:
-            self.init_app(app)
-
-    def init_app(self, app):
-        """Initializes your mail settings from the application settings.
-
-        You can use this if you want to set up your Mail instance
-        at configuration time.
-
-        :param app: Flask application instance
-        """
-
-        state = _Mail(
-            app.config.get('MAIL_SERVER', '127.0.0.1'),
-            app.config.get('MAIL_USERNAME'),
-            app.config.get('MAIL_PASSWORD'),
-            app.config.get('MAIL_PORT', 25),
-            app.config.get('MAIL_USE_TLS', False),
-            app.config.get('MAIL_USE_SSL', False),
-            app.config.get('MAIL_DEFAULT_SENDER'),
-            int(app.config.get('MAIL_DEBUG', app.debug)),
-            app.config.get('MAIL_MAX_EMAILS'),
-            app.config.get('MAIL_SUPPRESS_SEND', app.testing))
-
-        # register extension with app
-        app.extensions = getattr(app, 'extensions', {})
-        app.extensions['mail'] = state
+class _MailMixin(object):
 
     @contextmanager
     def record_messages(self):
@@ -461,11 +413,67 @@ class Mail(object):
 
     def connect(self):
         """Opens a connection to the mail host."""
-        app = self.app or current_app
+        app = getattr(self, "app", None) or current_app
         try:
             return Connection(app.extensions['mail'])
         except KeyError:
             raise RuntimeError("The curent application was not configured with Flask-Mail")
+
+
+class _Mail(_MailMixin):
+    def __init__(self, server, username, password, port, use_tls, use_ssl,
+                 default_sender, debug, max_emails, suppress):
+        self.server = server
+        self.username = username
+        self.password = password
+        self.port = port
+        self.use_tls = use_tls
+        self.use_ssl = use_ssl
+        self.default_sender = default_sender
+        self.debug = debug
+        self.max_emails = max_emails
+        self.suppress = suppress
+
+
+class Mail(_MailMixin):
+    """Manages email messaging
+
+    :param app: Flask instance
+    """
+
+    def __init__(self, app=None):
+        self.app = app
+        if app is not None:
+            self.state = self.init_app(app)
+
+    def init_app(self, app):
+        """Initializes your mail settings from the application settings.
+
+        You can use this if you want to set up your Mail instance
+        at configuration time.
+
+        :param app: Flask application instance
+        """
+
+        state = _Mail(
+            app.config.get('MAIL_SERVER', '127.0.0.1'),
+            app.config.get('MAIL_USERNAME'),
+            app.config.get('MAIL_PASSWORD'),
+            app.config.get('MAIL_PORT', 25),
+            app.config.get('MAIL_USE_TLS', False),
+            app.config.get('MAIL_USE_SSL', False),
+            app.config.get('MAIL_DEFAULT_SENDER'),
+            int(app.config.get('MAIL_DEBUG', app.debug)),
+            app.config.get('MAIL_MAX_EMAILS'),
+            app.config.get('MAIL_SUPPRESS_SEND', app.testing))
+
+        # register extension with app
+        app.extensions = getattr(app, 'extensions', {})
+        app.extensions['mail'] = state
+        return state
+
+    def __getattr__(self, name):
+        return getattr(self.state, name, None)
 
 
 signals = blinker.Namespace()
