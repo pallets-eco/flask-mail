@@ -96,7 +96,6 @@ class Connection(object):
         self.mail = mail
 
     def __enter__(self):
-        print self.mail
         if self.mail.suppress:
             self.host = None
         else:
