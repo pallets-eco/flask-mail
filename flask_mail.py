@@ -11,7 +11,7 @@
 
 from __future__ import with_statement
 
-__version__ = '0.8.0'
+__version__ = '0.8.1'
 
 import blinker
 import smtplib
