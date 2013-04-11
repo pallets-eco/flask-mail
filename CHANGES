@@ -3,6 +3,15 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+
+Version 0.8.2
+-------------
+
+Released April 11 2013
+
+- Removed annoying stray print statement
+
+
 Version 0.8.1
 -------------
 
