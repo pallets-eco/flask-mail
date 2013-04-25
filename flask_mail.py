@@ -125,10 +125,18 @@ class Connection(object):
         return host
 
     def send(self, message):
-        """Sends message.
+        """Verifies and sends message.
 
         :param message: Message instance.
         """
+        assert message.recipients, "No recipients have been added"
+
+        assert message.sender, (
+                "The message does not specify a sender and a default sender "
+                "has not been configured")
+
+        if message.has_bad_headers():
+            raise BadHeaderError
 
         if message.date is None:
             message.date = time.time()
@@ -220,7 +228,7 @@ class Message(object):
 
         self.recipients = recipients or []
         self.subject = subject
-        self.sender = sender
+        self.sender = sender or current_app.extensions['mail'].default_sender
         self.reply_to = reply_to
         self.cc = cc or []
         self.bcc = bcc or []
@@ -318,19 +326,6 @@ class Message(object):
 
     def send(self, connection):
         """Verifies and sends the message."""
-
-        assert self.recipients, "No recipients have been added"
-
-        if not self.sender:
-            self.sender = current_app.extensions['mail'].default_sender
-            assert self.sender, (
-                "The message does not specify a sender and a default sender "
-                "has not been configured")
-
-        assert self.sender, "The message does not specify a sender address"
-
-        if self.has_bad_headers():
-            raise BadHeaderError
 
         connection.send(self)
 
