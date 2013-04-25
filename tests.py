@@ -348,6 +348,8 @@ class TestMail(TestCase):
             self.mail.send(msg)
             self.assertIsNotNone(msg.date)
             self.assertEqual(len(outbox), 1)
+            sent_msg = outbox[0]
+            self.assertEqual(msg.sender, self.app.extensions['mail'].default_sender)
 
     def test_send_message(self):
 
@@ -360,6 +362,7 @@ class TestMail(TestCase):
             self.assertEqual(msg.subject, "testing")
             self.assertEqual(msg.recipients, ["tester@example.com"])
             self.assertEqual(msg.body, "test")
+            self.assertEqual(msg.sender, self.app.extensions['mail'].default_sender)
 
 
 class TestConnection(TestCase):
@@ -371,6 +374,8 @@ class TestConnection(TestCase):
                                   recipients=["to@example.com"],
                                   body="testing")
             self.assertEqual(len(outbox), 1)
+            sent_msg = outbox[0]
+            self.assertEqual(sent_msg.sender, self.app.extensions['mail'].default_sender)
 
     def test_send_single(self):
         with self.mail.record_messages() as outbox:
@@ -380,6 +385,11 @@ class TestConnection(TestCase):
                               body="testing")
                 conn.send(msg)
             self.assertEqual(len(outbox), 1)
+            sent_msg = outbox[0]
+            self.assertEqual(sent_msg.subject, "testing")
+            self.assertEqual(sent_msg.recipients, ["to@example.com"])
+            self.assertEqual(sent_msg.body, "testing")
+            self.assertEqual(sent_msg.sender, self.app.extensions['mail'].default_sender)
 
     def test_send_many(self):
         with self.mail.record_messages() as outbox:
@@ -390,3 +400,5 @@ class TestConnection(TestCase):
                                   body="testing")
                     conn.send(msg)
             self.assertEqual(len(outbox), 100)
+            sent_msg = outbox[0]
+            self.assertEqual(sent_msg.sender, self.app.extensions['mail'].default_sender)
