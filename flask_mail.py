@@ -15,6 +15,7 @@ __version__ = '0.8.2'
 
 import blinker
 import smtplib
+import sys
 import time
 
 from email import charset
@@ -27,6 +28,15 @@ from email.utils import formatdate, formataddr, make_msgid, parseaddr
 from contextlib import contextmanager
 
 from flask import current_app
+
+PY3 = sys.version_info[0] == 3
+
+if PY3:
+    string_types = str,
+    text_type = str
+else:
+    string_types = basestring,
+    text_type = unicode
 
 charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
 
@@ -41,37 +51,48 @@ class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
         return '%s. You passed in %r (%s)' % (original, self.obj, type(self.obj))
 
 
-def force_text(s, encoding='utf-8', errors='stricts'):
-    if isinstance(s, unicode):
+def force_text(s, encoding='utf-8', errors='strict'):
+    """
+    Similar to smart_text, except that lazy instances are resolved to
+    strings, rather than kept as lazy objects.
+
+    If strings_only is True, don't convert (some) non-string-like objects.
+    """
+    if isinstance(s, text_type):
         return s
+
     try:
-        if not isinstance(s, basestring):
+        if not isinstance(s, string_types):
             if hasattr(s, '__unicode__'):
                 s = s.__unicode__()
             else:
-                s = unicode(bytes(s), encoding, errors)
+                if PY3:
+                    if isinstance(s, bytes):
+                        s = text_type(s, encoding, errors)
+                    else:
+                        s = text_type(s)
+                else:
+                    s = text_type(bytes(s), encoding, errors)
         else:
             s = s.decode(encoding, errors)
-    except UnicodeDecodeError, e:
+    except UnicodeDecodeError as e:
         if not isinstance(s, Exception):
             raise FlaskMailUnicodeDecodeError(s, *e.args)
         else:
-            s = ' '.join([force_text(arg, encoding, errors) for arg in s])
+            s = ' '.join([force_text(arg, encoding, strings_only,
+                    errors) for arg in s])
     return s
 
 
 def sanitize_address(addr, encoding='utf-8'):
-    if isinstance(addr, basestring):
+    if isinstance(addr, string_types):
         addr = parseaddr(force_text(addr))
     nm, addr = addr
 
-    # This try-except clause is needed on Python 3 < 3.2.4
-    # http://bugs.python.org/issue14291
     try:
         nm = Header(nm, encoding).encode()
     except UnicodeEncodeError:
         nm = Header(nm, 'utf-8').encode()
-
     try:
         addr.encode('ascii')
     except UnicodeEncodeError:  # IDN
@@ -200,7 +221,7 @@ class Message(object):
     :param extra_headers: A dictionary of additional headers for the message
     """
 
-    def __init__(self, subject,
+    def __init__(self, subject=None,
                  recipients=None,
                  body=None,
                  html=None,
@@ -278,7 +299,7 @@ class Message(object):
             msg['Reply-To'] = sanitize_address(self.reply_to)
 
         if self.extra_headers:
-            for k, v in self.extra_headers.iteritems():
+            for k, v in self.extra_headers.items():
                 msg[k] = v
 
         for attachment in attachments:
@@ -355,7 +376,6 @@ class Message(object):
         :param data: the raw file data
         :param disposition: content-disposition (if any)
         """
-
         self.attachments.append(
             Attachment(filename, content_type, data, disposition, headers))
 
