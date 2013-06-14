@@ -287,10 +287,19 @@ class TestMessage(TestCase):
                       cc=[u"Ö <cc@example.com>"])
 
         response = msg.as_string()
-        h1 = Header("To: %s, %s" % (sanitize_address(u"Ä <t1@example.com>"), sanitize_address(u"Ü <t2@example.com>")))
+        a1 = sanitize_address(u"Ä <t1@example.com>")
+        a2 = sanitize_address(u"Ü <t2@example.com>")
+        h1_a = Header("To: %s, %s" % (a1, a2))
+        h1_b = Header("To: %s, %s" % (a2, a1))
         h2 = Header("From: %s" % sanitize_address(u"ÄÜÖ → ✓ <from@example.com>"))
         h3 = Header("Cc: %s" % sanitize_address(u"Ö <cc@example.com>"))
-        self.assertIn(h1.encode(), response)
+
+        # Ugly, but there's no guaranteed order of the recipieints in the header
+        try:
+            self.assertIn(h1_a.encode(), response)
+        except AssertionError:
+            self.assertIn(h1_b.encode(), response)
+
         self.assertIn(h2.encode(), response)
         self.assertIn(h3.encode(), response)
 
