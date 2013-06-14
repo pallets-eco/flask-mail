@@ -6,8 +6,8 @@ python:
   - "3.3"
 
 install:
-  - pip install . --quiet --use-mirrors
-  - pip install nose --quiet --use-mirrors
+  - pip install . --quiet
+  - pip install nose --quiet
 
 script: nosetests
 
