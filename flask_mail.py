@@ -163,7 +163,7 @@ class Connection(object):
             message.date = time.time()
 
         if self.host:
-            self.host.sendmail(message.sender,
+            self.host.sendmail(sanitize_address(message.sender),
                                message.send_to,
                                message.as_string())
 
