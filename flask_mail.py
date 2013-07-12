@@ -458,7 +458,7 @@ class Mail(_MailMixin):
     def __init__(self, app=None):
         self.app = app
         if app is not None:
-            self.state = self.init_app(app)
+            self.init_app(app)
 
     def init_app(self, app):
         """Initializes your mail settings from the application settings.
@@ -484,6 +484,7 @@ class Mail(_MailMixin):
         # register extension with app
         app.extensions = getattr(app, 'extensions', {})
         app.extensions['mail'] = state
+        self.state = state
         return state
 
     def __getattr__(self, name):
