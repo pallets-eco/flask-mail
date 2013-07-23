@@ -207,6 +207,28 @@ class TestMessage(TestCase):
 
         self.assertIn('Content-Type: multipart/mixed', msg.as_string())
 
+    def test_plain_message_with_ascii_attachment(self):
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body="hello")
+
+        msg.attach(data="this is a test",
+                   content_type="text/plain",
+                   filename='test doc.txt')
+
+        self.assertIn('Content-Disposition: attachment;filename=test doc.txt\n', msg.as_string())
+
+    def test_plain_message_with_unicode_attachment(self):
+        msg = Message(subject="subject",
+                      recipients=["to@example.com"],
+                      body="hello")
+
+        msg.attach(data="this is a test",
+                   content_type="text/plain",
+                   filename=u'ünicöde ←→ ✓.txt')
+
+        self.assertIn("Content-Disposition: attachment;\n filename*=UTF8''%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt\n", msg.as_string())
+
     def test_html_message(self):
         html_text = "<p>Hello World</p>"
         msg = Message(sender="from@example.com",
