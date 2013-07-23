@@ -16,6 +16,7 @@ import blinker
 import smtplib
 import socket
 import time
+import urllib
 
 from email import charset
 from email.encoders import encode_base64
@@ -296,8 +297,15 @@ class Message(object):
             f.set_payload(attachment.data)
             encode_base64(f)
 
-            f.add_header('Content-Disposition', '%s;filename=%s' %
-                         (attachment.disposition, attachment.filename))
+            try:
+                attachment.filename and attachment.filename.encode('ascii')
+            except UnicodeEncodeError:
+                encoded_filename = urllib.quote(attachment.filename.encode('utf8'))
+                f.add_header('Content-Disposition', "%s;filename*=UTF8''%s" %
+                             (attachment.disposition, encoded_filename))
+            else:
+                f.add_header('Content-Disposition', '%s;filename=%s' %
+                             (attachment.disposition, attachment.filename))
 
             for key, value in attachment.headers:
                 f.add_header(key, value)
