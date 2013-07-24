@@ -227,7 +227,10 @@ class TestMessage(TestCase):
                    content_type="text/plain",
                    filename=u'ünicöde ←→ ✓.txt')
 
-        self.assertIn("Content-Disposition: attachment;\n filename*=UTF8''%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt\n", msg.as_string())
+        parsed = email.message_from_string(msg.as_string())
+
+        self.assertEqual(re.sub(r'\s+', ' ', parsed.get_payload()[1].get('Content-Disposition')),
+            'attachment; filename*="UTF8\'\'%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt"')
 
     def test_html_message(self):
         html_text = "<p>Hello World</p>"

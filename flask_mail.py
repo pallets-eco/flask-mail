@@ -17,7 +17,6 @@ import blinker
 import smtplib
 import sys
 import time
-import urllib
 
 from email import charset
 from email.encoders import encode_base64
@@ -319,9 +318,8 @@ class Message(object):
             try:
                 attachment.filename and attachment.filename.encode('ascii')
             except UnicodeEncodeError:
-                encoded_filename = urllib.quote(attachment.filename.encode('utf8'))
-                f.add_header('Content-Disposition', "%s;filename*=UTF8''%s" %
-                             (attachment.disposition, encoded_filename))
+                f.add_header('Content-Disposition', attachment.disposition,
+                            filename=('UTF8', '', attachment.filename.encode('utf8')))
             else:
                 f.add_header('Content-Disposition', '%s;filename=%s' %
                              (attachment.disposition, attachment.filename))
