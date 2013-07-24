@@ -318,8 +318,11 @@ class Message(object):
             try:
                 attachment.filename and attachment.filename.encode('ascii')
             except UnicodeEncodeError:
+                filename = attachment.filename
+                if not PY3:
+                    filename = filename.encode('utf8')
                 f.add_header('Content-Disposition', attachment.disposition,
-                            filename=('UTF8', '', attachment.filename.encode('utf8')))
+                            filename=('UTF8', '', filename))
             else:
                 f.add_header('Content-Disposition', '%s;filename=%s' %
                              (attachment.disposition, attachment.filename))

@@ -212,7 +212,7 @@ class TestMessage(TestCase):
                       recipients=["to@example.com"],
                       body="hello")
 
-        msg.attach(data="this is a test",
+        msg.attach(data=b"this is a test",
                    content_type="text/plain",
                    filename='test doc.txt')
 
@@ -223,14 +223,16 @@ class TestMessage(TestCase):
                       recipients=["to@example.com"],
                       body="hello")
 
-        msg.attach(data="this is a test",
+        msg.attach(data=b"this is a test",
                    content_type="text/plain",
                    filename=u'ünicöde ←→ ✓.txt')
 
         parsed = email.message_from_string(msg.as_string())
 
-        self.assertEqual(re.sub(r'\s+', ' ', parsed.get_payload()[1].get('Content-Disposition')),
-            'attachment; filename*="UTF8\'\'%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt"')
+        self.assertIn(re.sub(r'\s+', ' ', parsed.get_payload()[1].get('Content-Disposition')), [
+            'attachment; filename*="UTF8\'\'%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt"',
+            'attachment; filename*=UTF8\'\'%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt'
+            ])
 
     def test_html_message(self):
         html_text = "<p>Hello World</p>"
