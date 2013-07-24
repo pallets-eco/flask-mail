@@ -315,8 +315,17 @@ class Message(object):
             f.set_payload(attachment.data)
             encode_base64(f)
 
-            f.add_header('Content-Disposition', '%s;filename=%s' %
-                         (attachment.disposition, attachment.filename))
+            try:
+                attachment.filename and attachment.filename.encode('ascii')
+            except UnicodeEncodeError:
+                filename = attachment.filename
+                if not PY3:
+                    filename = filename.encode('utf8')
+                f.add_header('Content-Disposition', attachment.disposition,
+                            filename=('UTF8', '', filename))
+            else:
+                f.add_header('Content-Disposition', '%s;filename=%s' %
+                             (attachment.disposition, attachment.filename))
 
             for key, value in attachment.headers:
                 f.add_header(key, value)
