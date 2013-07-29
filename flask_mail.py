@@ -29,6 +29,11 @@ from email.header import Header
 from email.utils import formatdate, formataddr, make_msgid, parseaddr
 from contextlib import contextmanager
 
+try:
+    from google.appengine.api import mail as appengine_mail
+except ImportError:
+    appengine_mail = None
+
 from flask import current_app
 
 PY3 = sys.version_info[0] == 3
@@ -152,6 +157,9 @@ class Connection(object):
             self.host.quit()
 
     def configure_host(self):
+        if self.mail.use_appengine:
+            return None
+
         if self.mail.use_ssl:
             host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
         else:
@@ -190,6 +198,14 @@ class Connection(object):
                                message.as_bytes() if PY3 else message.as_string(),
                                message.mail_options,
                                message.rcpt_options)
+        elif self.mail.use_appengine:
+            email_message = appengine_mail.EmailMessage(
+                mime_message=message.as_mime_message())
+            # BCC doesn't copy through the MIME conversion because it is
+            # intentionally left out of the message body.
+            if message.bcc:
+                email_message.bcc = message.bcc
+            email_message.send()
 
         email_dispatched.send(message, app=current_app._get_current_object())
 
@@ -316,11 +332,8 @@ class Message(object):
         charset = self.charset or 'utf-8'
         return MIMEText(text, _subtype=subtype, _charset=charset)
 
-    def _message(self):
-        """Creates the email"""
-        ascii_attachments = current_app.extensions['mail'].ascii_attachments
-        encoding = self.charset or 'utf-8'
-
+    def as_mime_message(self):
+        """Creates the email and returns its contents as a MIME message."""
         attachments = self.attachments or []
 
         if len(attachments) == 0 and not self.alts:
@@ -393,13 +406,17 @@ class Message(object):
         return msg
 
     def as_string(self):
-        return self._message().as_string()
+        """Creates the email and returns its contents as a string."""
+        msg = self.as_mime_message()
+        return msg.as_string()
 
     def as_bytes(self):
+        """Creates the email and returns its contents as bytes."""
         if PY34:
-            return self._message().as_bytes()
+            return self.as_mime_message().as_bytes()
         else: # fallback for old Python (3) versions
-            return self._message().as_string().encode(self.charset or 'utf-8')
+            return self.as_mime_message().as_string().encode(
+                self.charset or 'utf-8')
 
     def __str__(self):
         return self.as_string()
@@ -527,7 +544,7 @@ class _MailMixin(object):
 
 class _Mail(_MailMixin):
     def __init__(self, server, username, password, port, use_tls, use_ssl,
-                 default_sender, debug, max_emails, suppress,
+                 default_sender, debug, max_emails, suppress, use_appengine,
                  ascii_attachments=False):
         self.server = server
         self.username = username
@@ -539,6 +556,7 @@ class _Mail(_MailMixin):
         self.debug = debug
         self.max_emails = max_emails
         self.suppress = suppress
+        self.use_appengine = use_appengine
         self.ascii_attachments = ascii_attachments
 
 
@@ -567,6 +585,7 @@ class Mail(_MailMixin):
             int(config.get('MAIL_DEBUG', debug)),
             config.get('MAIL_MAX_EMAILS'),
             config.get('MAIL_SUPPRESS_SEND', testing),
+            config.get('MAIL_USE_APPENGINE', False),
             config.get('MAIL_ASCII_ATTACHMENTS', False)
         )
 
