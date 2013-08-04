@@ -799,10 +799,11 @@ else:
 
             self.assertEquals(1, len(sent_msg.attachments))
             filename, part = sent_msg.attachments[0]
-            self.assertIsNone(filename)
-            self.assertEqual(part.disposition, 'attachment')
-            self.assertEqual(part.content_type, "text/plain")
-            self.assertEqual(part.data, b"this is a test")
+            # When the filename isn't specified, the parameter is still
+            # set in the content-disposition header, which the email Python
+            # module needs to parse out that section as an attachment.
+            self.assertEquals('None', filename)
+            self.assertEqual(part.payload.decode(), b"this is a test")
 
         def test_send_without_sender(self):
             self.app.extensions['mail'].default_sender = None

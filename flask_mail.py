@@ -390,11 +390,11 @@ class Message(object):
             except UnicodeEncodeError:
                 if not PY3:
                     filename = filename.encode('utf8')
-                filename = ('UTF8', '', filename)
-
-            f.add_header('Content-Disposition',
-                         attachment.disposition,
-                         filename=filename)
+                f.add_header('Content-Disposition', attachment.disposition,
+                             filename=('UTF8', '', filename))
+            else:
+                f.add_header('Content-Disposition', '%s;filename=%s' %
+                             (attachment.disposition, attachment.filename))
 
             for key, value in attachment.headers.items():
                 f.add_header(key, value)
