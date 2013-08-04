@@ -272,7 +272,8 @@ class Message(object):
     :param rcpt_options:  A list of ESMTP options to be used in RCPT commands
     """
 
-    def __init__(self, subject='',
+    def __init__(self,
+                 subject='',
                  recipients=None,
                  body=None,
                  html=None,
@@ -293,9 +294,11 @@ class Message(object):
         if isinstance(sender, tuple):
             sender = "%s <%s>" % sender
 
+        mail_ext = current_app.extensions['mail']
+
         self.recipients = recipients or []
         self.subject = subject
-        self.sender = sender
+        self.sender = sender or mail_ext.default_sender
         self.reply_to = reply_to
         self.cc = cc or []
         self.bcc = bcc or []
@@ -303,7 +306,14 @@ class Message(object):
         self.alts = dict(alts or {})
         self.html = html
         self.date = date
-        self.msgId = make_msgid()
+
+        if mail_ext.use_appengine:
+            # gethostbyaddr doesn't work on App Engine and the mail API will
+            # set its own message ID upon sending.
+            self.msgId = ''
+        else:
+            self.msgId = make_msgid()
+
         self.charset = charset
         self.extra_headers = extra_headers
         self.mail_options = mail_options or []
@@ -359,8 +369,10 @@ class Message(object):
         msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
 
         msg['Date'] = formatdate(self.date, localtime=True)
+
         # see RFC 5322 section 3.6.4.
-        msg['Message-ID'] = self.msgId
+        if self.msgId:
+            msg['Message-ID'] = self.msgId
 
         if self.cc:
             msg['Cc'] = ', '.join(list(set(sanitize_addresses(self.cc, encoding))))
