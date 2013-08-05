@@ -31,7 +31,9 @@ from contextlib import contextmanager
 
 try:
     from google.appengine.api import mail as appengine_mail
-except ImportError:
+except (ImportError, SyntaxError):
+    # App Engine's environment breaks with a syntax error in Python3,
+    # fails with an import error if not present.
     appengine_mail = None
 
 from flask import current_app

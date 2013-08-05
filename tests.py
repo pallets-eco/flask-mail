@@ -15,7 +15,8 @@ from email.header import Header
 from email import charset
 
 from flask import Flask
-from flask_mail import Mail, Message, BadHeaderError, sanitize_address, PY3
+from flask_mail import (
+    Mail, Message, BadHeaderError, appengine_mail, sanitize_address, PY3)
 from speaklater import make_lazy_string
 
 
@@ -703,12 +704,11 @@ class TestConnection(TestCase):
                     msg.rcpt_options
                 )
 
-try:
-    import dev_appserver
-except ImportError:
+if not appengine_mail:
     # App Engine not available in this environment
     logging.exception('Cannot run App Engine tests')
 else:
+    import dev_appserver
     dev_appserver.fix_sys_path()
     from google.appengine.ext import testbed
 
