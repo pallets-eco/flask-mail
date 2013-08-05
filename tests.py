@@ -706,7 +706,7 @@ class TestConnection(TestCase):
 
 if not appengine_mail:
     # App Engine not available in this environment
-    logging.exception('Cannot run App Engine tests')
+    logging.error('Cannot run App Engine tests')
 else:
     import dev_appserver
     dev_appserver.fix_sys_path()
