@@ -29,16 +29,19 @@ from email.header import Header
 from email.utils import formatdate, formataddr, make_msgid, parseaddr
 from contextlib import contextmanager
 
-try:
-    from google.appengine.api import mail as appengine_mail
-except (ImportError, SyntaxError):
-    # App Engine's environment breaks with a syntax error in Python3,
-    # fails with an import error if not present.
-    appengine_mail = None
-
 from flask import current_app
 
 PY3 = sys.version_info[0] == 3
+PY27 = sys.version_info[0] == 2 and sys.version_info[1] == 7
+
+# By default, App Engine is not available. It only works for Python 2.7.
+appengine_mail = None
+
+if PY27:
+    try:
+        from google.appengine.api import mail as appengine_mail
+    except ImportError:
+        pass
 
 PY34 = PY3 and sys.version_info[1] >= 4
 
