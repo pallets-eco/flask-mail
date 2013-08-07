@@ -145,10 +145,11 @@ class Connection(object):
 
         return host
 
-    def send(self, message):
+    def send(self, message, envelope_from=None):
         """Verifies and sends message.
 
         :param message: Message instance.
+        :param envelope_from: Email address to be used in MAIL FROM command.
         """
         assert message.recipients, "No recipients have been added"
 
@@ -163,7 +164,7 @@ class Connection(object):
             message.date = time.time()
 
         if self.host:
-            self.host.sendmail(sanitize_address(message.sender),
+            self.host.sendmail(sanitize_address(envelope_from or message.sender),
                                message.send_to,
                                message.as_string(),
                                message.mail_options,
