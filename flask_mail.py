@@ -468,6 +468,8 @@ class Mail(_MailMixin):
         self.app = app
         if app is not None:
             self.state = self.init_app(app)
+        else:
+            self.state = None
 
     def init_app(self, app):
         """Initializes your mail settings from the application settings.
