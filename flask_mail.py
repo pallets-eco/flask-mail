@@ -145,10 +145,11 @@ class Connection(object):
 
         return host
 
-    def send(self, message):
+    def send(self, message, envelope_from=None):
         """Verifies and sends message.
 
         :param message: Message instance.
+        :param envelope_from: Email address to be used in MAIL FROM command.
         """
         assert message.recipients, "No recipients have been added"
 
@@ -163,9 +164,11 @@ class Connection(object):
             message.date = time.time()
 
         if self.host:
-            self.host.sendmail(sanitize_address(message.sender),
+            self.host.sendmail(sanitize_address(envelope_from or message.sender),
                                message.send_to,
-                               message.as_string())
+                               message.as_string(),
+                               message.mail_options,
+                               message.rcpt_options)
 
         email_dispatched.send(message, app=current_app._get_current_object())
 
@@ -227,6 +230,8 @@ class Message(object):
     :param date: send date
     :param charset: message character set
     :param extra_headers: A dictionary of additional headers for the message
+    :param mail_options: A list of ESMTP options to be used in MAIL FROM command
+    :param rcpt_options:  A list of ESMTP options to be used in RCPT commands
     """
 
     def __init__(self, subject=None,
@@ -240,7 +245,9 @@ class Message(object):
                  reply_to=None,
                  date=None,
                  charset=None,
-                 extra_headers=None):
+                 extra_headers=None,
+                 mail_options=None,
+                 rcpt_options=None):
 
         sender = sender
 
@@ -259,6 +266,8 @@ class Message(object):
         self.msgId = make_msgid()
         self.charset = charset
         self.extra_headers = extra_headers
+        self.mail_options = mail_options or []
+        self.rcpt_options = rcpt_options or []
         self.attachments = attachments or []
 
     @property

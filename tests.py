@@ -66,6 +66,17 @@ class TestMessage(TestCase):
         msg2.add_recipient("somebody@here.com")
         self.assertEqual(len(msg2.recipients), 1)
 
+    def test_esmtp_options_properly_initialized(self):
+        msg = Message(subject="subject")
+        self.assertEqual(msg.mail_options, [])
+        self.assertEqual(msg.rcpt_options, [])
+
+        msg = Message(subject="subject", mail_options=['BODY=8BITMIME'])
+        self.assertEqual(msg.mail_options, ['BODY=8BITMIME'])
+
+        msg2 = Message(subject="subject", rcpt_options=['NOTIFY=SUCCESS'])
+        self.assertEqual(msg2.rcpt_options, ['NOTIFY=SUCCESS'])
+
     def test_sendto_properly_set(self):
         msg = Message(subject="subject", recipients=["somebody@here.com"],
                       cc=["cc@example.com"], bcc=["bcc@example.com"])
