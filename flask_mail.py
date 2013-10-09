@@ -301,7 +301,7 @@ class Message(object):
             alternative.attach(self._mimetext(self.html, 'html'))
             msg.attach(alternative)
 
-        msg['Subject'] = self.subject
+        msg['Subject'] = force_text(self.subject)
         msg['From'] = sanitize_address(self.sender)
         msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients))))
 
