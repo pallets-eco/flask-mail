@@ -341,6 +341,16 @@ class TestMessage(TestCase):
         self.assertIn(h2.encode(), response)
         self.assertIn(h3.encode(), response)
 
+    def test_unicode_subject(self):
+        try:
+            from speaklater import make_lazy_string
+        except ImportError:
+            return
+        msg = Message(subject=make_lazy_string(lambda a: a, u"sübject"),
+                      sender='from@example.com',
+                      recipients=["to@example.com"])
+        self.assertIn('=?utf-8?q?s=C3=BCbject?=', msg.as_string())
+
     def test_extra_headers(self):
         msg = Message(sender="from@example.com",
                       subject="subject",
