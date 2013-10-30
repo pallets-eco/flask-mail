@@ -9,6 +9,7 @@ import time
 import re
 
 from email.header import Header
+from email import charset
 
 from flask import Flask
 from flask_mail import Mail, Message, BadHeaderError, sanitize_address
@@ -390,6 +391,57 @@ class TestMessage(TestCase):
         msg.html = None
         msg.attach(data=b"foobar", content_type='text/csv')
         self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
+
+        # unicode sender as tuple
+        msg = Message(sender=(u"送信者", "from@example.com"),
+                      subject=u"表題",
+                      recipients=["foo@bar.com"],
+                      reply_to=u"返信先 <somebody@example.com>",
+                      charset='shift_jis')  # japanese
+        msg.body = u'内容'
+        self.assertIn('From: =?iso-2022-jp?', msg.as_string())
+        self.assertNotIn('From: =?utf-8?', msg.as_string())
+        self.assertIn('Subject: =?iso-2022-jp?', msg.as_string())
+        self.assertNotIn('Subject: =?utf-8?', msg.as_string())
+        self.assertIn('Reply-To: =?iso-2022-jp?', msg.as_string())
+        self.assertNotIn('Reply-To: =?utf-8?', msg.as_string())
+        self.assertIn('Content-Type: text/plain; charset="iso-2022-jp"', msg.as_string())
+
+        # unicode subject sjis
+        msg = Message(sender="from@example.com",
+                      subject=u"表題",
+                      recipients=["foo@bar.com"],
+                      charset='shift_jis')  # japanese
+        msg.body = u'内容'
+        self.assertIn('Subject: =?iso-2022-jp?', msg.as_string())
+        self.assertIn('Content-Type: text/plain; charset="iso-2022-jp"', msg.as_string())
+
+        # unicode subject utf-8
+        msg = Message(sender="from@example.com",
+                      subject="subject",
+                      recipients=["foo@bar.com"],
+                      charset='utf-8')
+        msg.body = u'内容'
+        self.assertIn('Subject: =?utf-8?', msg.as_string())
+        self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
+
+        # ascii subject
+        msg = Message(sender="from@example.com",
+                      subject="subject",
+                      recipients=["foo@bar.com"],
+                      charset='us-ascii')
+        msg.body = "normal ascii text"
+        self.assertNotIn('Subject: =?us-ascii?', msg.as_string())
+        self.assertIn('Content-Type: text/plain; charset="us-ascii"', msg.as_string())
+
+        # default charset
+        msg = Message(sender="from@example.com",
+                      subject="subject",
+                      recipients=["foo@bar.com"])
+        msg.body = "normal ascii text"
+        self.assertNotIn('Subject: =?', msg.as_string())
+        self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
+
 
 
 class TestMail(TestCase):
