@@ -106,8 +106,8 @@ def sanitize_address(addr, encoding='utf-8'):
     return formataddr((nm, addr))
 
 
-def sanitize_addresses(addresses):
-    return map(lambda e: sanitize_address(e), addresses)
+def sanitize_addresses(addresses, encoding='utf-8'):
+    return map(lambda e: sanitize_address(e, encoding), addresses)
 
 
 class Connection(object):
@@ -284,6 +284,8 @@ class Message(object):
     def as_string(self):
         """Creates the email"""
 
+        encoding = self.charset or 'utf-8'
+
         attachments = self.attachments or []
 
         if len(attachments) == 0 and not self.html:
@@ -301,19 +303,23 @@ class Message(object):
             alternative.attach(self._mimetext(self.html, 'html'))
             msg.attach(alternative)
 
-        msg['Subject'] = self.subject
-        msg['From'] = sanitize_address(self.sender)
-        msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients))))
+        if self.charset:
+            msg['Subject'] = Header(self.subject, encoding)
+        else:
+            msg['Subject'] = self.subject
+
+        msg['From'] = sanitize_address(self.sender, encoding)
+        msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
 
         msg['Date'] = formatdate(self.date, localtime=True)
         # see RFC 5322 section 3.6.4.
         msg['Message-ID'] = self.msgId
 
         if self.cc:
-            msg['Cc'] = ', '.join(list(set(sanitize_addresses(self.cc))))
+            msg['Cc'] = ', '.join(list(set(sanitize_addresses(self.cc, encoding))))
 
         if self.reply_to:
-            msg['Reply-To'] = sanitize_address(self.reply_to)
+            msg['Reply-To'] = sanitize_address(self.reply_to, encoding)
 
         if self.extra_headers:
             for k, v in self.extra_headers.items():
