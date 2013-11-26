@@ -193,7 +193,7 @@ class TestMessage(TestCase):
                    content_type="text/plain",
                    filename='test doc.txt')
 
-        self.assertIn('Content-Disposition: attachment;filename=test doc.txt\n', msg.as_string())
+        self.assertIn('Content-Disposition: attachment;filename="test doc.txt"\n', msg.as_string())
 
     def test_plain_message_with_unicode_attachment(self):
         msg = Message(subject="subject",

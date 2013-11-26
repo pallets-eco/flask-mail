@@ -304,8 +304,12 @@ class Message(object):
                 f.add_header('Content-Disposition', "%s;filename*=UTF8''%s" %
                              (attachment.disposition, encoded_filename))
             else:
-                f.add_header('Content-Disposition', '%s;filename=%s' %
-                             (attachment.disposition, attachment.filename))
+                if attachment.filename:
+                    encoded_filename = attachment.filename.replace('\\', '\\\\').replace('"', '\\"')
+                else:
+                    encoded_filename = 'None'
+                f.add_header('Content-Disposition', '%s;filename="%s"' %
+                             (attachment.disposition, encoded_filename))
 
             for key, value in attachment.headers:
                 f.add_header(key, value)
