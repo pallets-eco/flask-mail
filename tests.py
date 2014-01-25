@@ -116,6 +116,10 @@ class TestMessage(TestCase):
                       body="testing")
         self.assertRaises(AssertionError, self.mail.send, msg)
 
+    def test_send_without_subject(self):
+        msg = Message(recipients=["to@example.com"], body="testing")
+        self.assertRaises(AssertionError, self.mail.send, msg)
+
     def test_bcc(self):
         msg = Message(sender="from@example.com",
                       subject="testing",
