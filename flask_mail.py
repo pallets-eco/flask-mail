@@ -151,6 +151,8 @@ class Connection(object):
         :param message: Message instance.
         :param envelope_from: Email address to be used in MAIL FROM command.
         """
+        assert message.subject, "The message does not have a subject."
+
         assert message.recipients, "No recipients have been added"
 
         assert message.sender, (
