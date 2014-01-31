@@ -145,7 +145,7 @@ class Connection(object):
 
         if self.host:
             self.host.sendmail(message.sender,
-                               message.send_to,
+                               sanitize_addresses(message.send_to),
                                message.as_string())
 
         if email_dispatched:
