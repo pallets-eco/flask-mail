@@ -341,7 +341,12 @@ class Message(object):
 
             msg.attach(f)
 
-        return msg.as_string()
+        msg_str = msg.as_string()
+        if PY3 and isinstance(msg_str, str):
+            # Force convert to bytes string
+            return msg_str.encode(self.charset or 'utf-8')
+        else:
+            return msg_str
 
     def __str__(self):
         return self.as_string()
