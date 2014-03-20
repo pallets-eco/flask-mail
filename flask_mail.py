@@ -249,14 +249,14 @@ class Message(object):
                  mail_options=None,
                  rcpt_options=None):
 
-        sender = sender
+        sender = sender or current_app.extensions['mail'].default_sender
 
         if isinstance(sender, tuple):
             sender = "%s <%s>" % sender
 
         self.recipients = recipients or []
         self.subject = subject
-        self.sender = sender or current_app.extensions['mail'].default_sender
+        self.sender = sender
         self.reply_to = reply_to
         self.cc = cc or []
         self.bcc = bcc or []
