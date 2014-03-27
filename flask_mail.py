@@ -480,6 +480,19 @@ class Mail(_MailMixin):
         else:
             self.state = None
 
+    def init_mail(self, config, debug=False, testing=False):
+        return _Mail(
+            config.get('MAIL_SERVER', '127.0.0.1'),
+            config.get('MAIL_USERNAME'),
+            config.get('MAIL_PASSWORD'),
+            config.get('MAIL_PORT', 25),
+            config.get('MAIL_USE_TLS', False),
+            config.get('MAIL_USE_SSL', False),
+            config.get('MAIL_DEFAULT_SENDER'),
+            int(config.get('MAIL_DEBUG', debug)),
+            config.get('MAIL_MAX_EMAILS'),
+            config.get('MAIL_SUPPRESS_SEND', testing))
+
     def init_app(self, app):
         """Initializes your mail settings from the application settings.
 
@@ -488,18 +501,7 @@ class Mail(_MailMixin):
 
         :param app: Flask application instance
         """
-
-        state = _Mail(
-            app.config.get('MAIL_SERVER', '127.0.0.1'),
-            app.config.get('MAIL_USERNAME'),
-            app.config.get('MAIL_PASSWORD'),
-            app.config.get('MAIL_PORT', 25),
-            app.config.get('MAIL_USE_TLS', False),
-            app.config.get('MAIL_USE_SSL', False),
-            app.config.get('MAIL_DEFAULT_SENDER'),
-            int(app.config.get('MAIL_DEBUG', app.debug)),
-            app.config.get('MAIL_MAX_EMAILS'),
-            app.config.get('MAIL_SUPPRESS_SEND', app.testing))
+        state = self.init_mail(app.config, app.debug, app.testing)
 
         # register extension with app
         app.extensions = getattr(app, 'extensions', {})
