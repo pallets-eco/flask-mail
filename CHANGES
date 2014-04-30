@@ -3,6 +3,41 @@ Flask-Mail Changelog
 
 Here you can see the full list of changes between each Flask-Mail release.
 
+
+Version 0.9.0
+-------------
+
+Released June 14 2013
+
+- Added initial Python 3 support
+
+
+Version 0.8.2
+-------------
+
+Released April 11 2013
+
+- Removed annoying stray print statement
+
+
+Version 0.8.1
+-------------
+
+Released April 04 2013
+
+- Fixed a bug with the new state object
+
+
+Version 0.8.0
+-------------
+
+Released April 03 2013
+
+- Fixed a bug with duplicate recipients
+- Changed configuration options to be less confusing
+- General API clean as things were happening in a few different places
+
+
 Version 0.7.6
 -------------
 

@@ -52,14 +52,12 @@ options (each is explained later in the documentation):
 
 * **MAIL_PASSWORD** : default **None**
 
-* **DEFAULT_MAIL_SENDER** : default **None**
+* **MAIL_DEFAULT_SENDER** : default **None**
 
-* **DEFAULT_MAX_EMAILS** : default **None**
+* **MAIL_MAX_EMAILS** : default **None**
 
-* **MAIL_FAIL_SILENTLY** : default **False**
+* **MAIL_SUPPRESS_SEND** : default **app.testing**
 
-* **MAIL_SUPPRESS_SEND** : default **False**
-git
 In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Mail**
 in unit tests (see below).
 
@@ -71,6 +69,9 @@ Emails are managed through a ``Mail`` instance::
     app = Flask(__name__)
     mail = Mail(app)
 
+In this case all emails are sent using the configuration values of the application that
+was passed to the ``Mail`` class constructor.
+
 Alternatively you can set up your ``Mail`` instance later at configuration time, using the
 **init_app** method::
 
@@ -78,6 +79,10 @@ Alternatively you can set up your ``Mail`` instance later at configuration time,
 
     app = Flask(__name__)
     mail.init_app(app)
+
+In this case emails will be sent using the configuration values from Flask's ``current_app``
+context global. This is useful if you have multiple applications running in the same
+process but with different configuration options.
 
 
 Sending messages
@@ -99,7 +104,7 @@ You can set the recipient emails immediately, or individually::
     msg.recipients = ["you@example.com"]
     msg.add_recipient("somebodyelse@example.com")
 
-If you have set ``DEFAULT_MAIL_SENDER`` you don't need to set the message
+If you have set ``MAIL_DEFAULT_SENDER`` you don't need to set the message
 sender explicity, as it will use this configuration value by default::
 
     msg = Message("Hello",
@@ -121,10 +126,6 @@ The message can contain a body and/or HTML::
 Finally, to send the message, you use the ``Mail`` instance configured with your Flask application::
 
     mail.send(msg)
-
-If the setting **MAIL_FAIL_SILENTLY** is **True**, and the connection fails (for example, the mail
-server cannot be found at that hostname) then no error will be raised, although of course no emails will
-be sent either.
 
 
 Bulk emails
@@ -149,9 +150,8 @@ In that case you do things slightly differently::
 
 The connection to your email host is kept alive and closed automatically once all the messages have been sent.
 
-If you are going to run a mass email batch, be careful to pass in the ``max_emails`` parameter, which sets the maximum
-number of emails that will be sent before reconnecting. Some mail servers set a limit on the number of emails sent
-in a single connection. You can also set this globally with the **DEFAULT_MAX_EMAILS** setting.
+Some mail servers set a limit on the number of emails sent in a single connection. You can set the max amount
+of emails to send before reconnecting by specifying the **MAIL_MAX_EMAILS** setting.
 
 Attachments
 -----------
