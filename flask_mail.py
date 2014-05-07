@@ -449,13 +449,11 @@ class _MailMixin(object):
 
         self.send(Message(*args, **kwargs))
 
-    def connect(self):
+    def connect(self, mail=None):
         """Opens a connection to the mail host."""
-        app = getattr(self, "app", None) or current_app
-        try:
-            return Connection(app.extensions['mail'])
-        except KeyError:
-            raise RuntimeError("The curent application was not configured with Flask-Mail")
+        if not mail:
+            mail = self
+        return Connection(mail)
 
 
 class _Mail(_MailMixin):
