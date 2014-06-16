@@ -94,6 +94,11 @@ class TestMessage(TestCase):
                       sender=("tester", "tester@example.com"))
         self.assertEqual('tester <tester@example.com>', msg.sender)
 
+    def test_default_sender_as_tuple(self):
+        self.app.extensions['mail'].default_sender = ('tester', 'tester@example.com')
+        msg = Message(subject="testing")
+        self.assertEqual('tester <tester@example.com>', msg.sender)
+
     def test_reply_to(self):
         msg = Message(subject="testing",
                       recipients=["to@example.com"],
