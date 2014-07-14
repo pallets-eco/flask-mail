@@ -436,7 +436,7 @@ class _MailMixin(object):
         :param message: a Message instance.
         """
 
-        with self.connect() as connection:
+        with self.connect() as connection, self.app.app_context():
             message.send(connection)
 
     def send_message(self, *args, **kwargs):
@@ -495,6 +495,7 @@ class Mail(_MailMixin):
         :param app: Flask application instance
         """
 
+        self.app = app
         state = _Mail(
             app.config.get('MAIL_SERVER', '127.0.0.1'),
             app.config.get('MAIL_USERNAME'),
