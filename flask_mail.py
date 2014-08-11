@@ -34,9 +34,12 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     string_types = str,
     text_type = str
+    from email import policy
+    message_policy = policy.EmailPolicy
 else:
     string_types = basestring,
     text_type = unicode
+    message_policy = None
 
 charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
 
@@ -352,6 +355,8 @@ class Message(object):
                 f.add_header(key, value)
 
             msg.attach(f)
+        if message_policy:
+            msg.policy = message_policy
 
         return msg.as_string()
 
