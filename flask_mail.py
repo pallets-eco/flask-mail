@@ -110,6 +110,12 @@ def sanitize_addresses(addresses, encoding='utf-8'):
     return map(lambda e: sanitize_address(e, encoding), addresses)
 
 
+def _has_newline(line):
+    """Used by has_bad_header to check for \\r or \\n"""
+    if line and ('\r' in line or '\n' in line):
+        return True
+    return False
+
 class Connection(object):
     """Handles connection to host."""
 
@@ -354,13 +360,25 @@ class Message(object):
 
     def has_bad_headers(self):
         """Checks for bad headers i.e. newlines in subject, sender or recipients.
+        RFC5322: Allows multiline CRLF with trailing whitespace (FWS) in headers
         """
 
-        reply_to = self.reply_to or ''
-        for val in [self.subject, self.sender, reply_to] + self.recipients:
-            for c in '\r\n':
-                if c in val:
-                    return True
+        headers = [self.sender, self.reply_to] + self.recipients
+        for header in headers:
+            if _has_newline(header):
+                return True
+
+        if self.subject:
+            if _has_newline(self.subject):
+                for linenum, line in enumerate(self.subject.split('\r\n')):
+                    if not line:
+                        return True
+                    if linenum > 0 and line[0] not in '\t ':
+                        return True
+                    if _has_newline(line):
+                        return True
+                    if len(line.strip()) == 0:
+                        return True
         return False
 
     def is_bad_headers(self):

@@ -153,7 +153,36 @@ class TestMessage(TestCase):
         self.assertEqual(a.data, b"this is a test")
 
     def test_bad_header_subject(self):
-        msg = Message(subject="testing\n\r",
+        msg = Message(subject="testing\r\n",
+                      sender="from@example.com",
+                      body="testing",
+                      recipients=["to@example.com"])
+        self.assertRaises(BadHeaderError, self.mail.send, msg)
+
+    def test_multiline_subject(self):
+        msg = Message(subject="testing\r\n testing\r\n testing \r\n \ttesting",
+                      sender="from@example.com",
+                      body="testing",
+                      recipients=["to@example.com"])
+        self.mail.send(msg)
+        response = msg.as_string()
+        self.assertIn("From: from@example.com", str(response))
+        self.assertIn("testing\r\n testing\r\n testing \r\n \ttesting", str(response))
+
+    def test_bad_multiline_subject(self):
+        msg = Message(subject="testing\r\n testing\r\n ",
+                      sender="from@example.com",
+                      body="testing",
+                      recipients=["to@example.com"])
+        self.assertRaises(BadHeaderError, self.mail.send, msg)
+
+        msg = Message(subject="testing\r\n testing\r\n\t",
+                      sender="from@example.com",
+                      body="testing",
+                      recipients=["to@example.com"])
+        self.assertRaises(BadHeaderError, self.mail.send, msg)
+
+        msg = Message(subject="testing\r\n testing\r\n\n",
                       sender="from@example.com",
                       body="testing",
                       recipients=["to@example.com"])
@@ -161,7 +190,7 @@ class TestMessage(TestCase):
 
     def test_bad_header_sender(self):
         msg = Message(subject="testing",
-                      sender="from@example.com\n\r",
+                      sender="from@example.com\r\n",
                       recipients=["to@example.com"],
                       body="testing")
 
@@ -170,7 +199,7 @@ class TestMessage(TestCase):
     def test_bad_header_reply_to(self):
         msg = Message(subject="testing",
                       sender="from@example.com",
-                      reply_to="evil@example.com\n\r",
+                      reply_to="evil@example.com\r",
                       recipients=["to@example.com"],
                       body="testing")
 
