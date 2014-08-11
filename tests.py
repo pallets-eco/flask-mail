@@ -215,7 +215,7 @@ class TestMessage(TestCase):
                           "to\r\n@example.com"],
                       body="testing")
 
-        self.assertIn('To: to@example.com\n', msg.as_string())
+        self.assertIn('To: to@example.com', msg.as_string())
 
     def test_emails_are_sanitized(self):
         msg = Message(subject="testing",
@@ -262,7 +262,7 @@ class TestMessage(TestCase):
                    content_type="text/plain",
                    filename='test doc.txt')
 
-        self.assertIn('Content-Disposition: attachment;filename=test doc.txt\n', msg.as_string())
+        self.assertIn('Content-Disposition: attachment;filename=test doc.txt', msg.as_string())
 
     def test_plain_message_with_unicode_attachment(self):
         msg = Message(subject="subject",

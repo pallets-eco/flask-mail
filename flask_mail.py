@@ -35,7 +35,7 @@ if PY3:
     string_types = str,
     text_type = str
     from email import policy
-    message_policy = policy.EmailPolicy
+    message_policy = policy.SMTP
 else:
     string_types = basestring,
     text_type = unicode
@@ -313,7 +313,11 @@ class Message(object):
             msg.attach(alternative)
 
         if self.charset:
-            msg['Subject'] = Header(self.subject, encoding)
+            try:
+                subject = Header(self.subject, encoding).encode()
+            except UnicodeEncodeError:
+                subject = Header(self.subject, 'utf-8').encode()
+            msg['Subject'] = subject
         else:
             msg['Subject'] = self.subject
 
