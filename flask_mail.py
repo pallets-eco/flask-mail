@@ -34,9 +34,12 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     string_types = str,
     text_type = str
+    from email import policy
+    message_policy = policy.SMTP
 else:
     string_types = basestring,
     text_type = unicode
+    message_policy = None
 
 charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
 
@@ -109,6 +112,12 @@ def sanitize_address(addr, encoding='utf-8'):
 def sanitize_addresses(addresses, encoding='utf-8'):
     return map(lambda e: sanitize_address(e, encoding), addresses)
 
+
+def _has_newline(line):
+    """Used by has_bad_header to check for \\r or \\n"""
+    if line and ('\r' in line or '\n' in line):
+        return True
+    return False
 
 class Connection(object):
     """Handles connection to host."""
@@ -304,7 +313,11 @@ class Message(object):
             msg.attach(alternative)
 
         if self.charset:
-            msg['Subject'] = Header(self.subject, encoding)
+            try:
+                subject = Header(self.subject, encoding).encode()
+            except UnicodeEncodeError:
+                subject = Header(self.subject, 'utf-8').encode()
+            msg['Subject'] = subject
         else:
             msg['Subject'] = self.subject
 
@@ -346,6 +359,8 @@ class Message(object):
                 f.add_header(key, value)
 
             msg.attach(f)
+        if message_policy:
+            msg.policy = message_policy
 
         return msg.as_string()
 
@@ -354,13 +369,25 @@ class Message(object):
 
     def has_bad_headers(self):
         """Checks for bad headers i.e. newlines in subject, sender or recipients.
+        RFC5322: Allows multiline CRLF with trailing whitespace (FWS) in headers
         """
 
-        reply_to = self.reply_to or ''
-        for val in [self.subject, self.sender, reply_to] + self.recipients:
-            for c in '\r\n':
-                if c in val:
-                    return True
+        headers = [self.sender, self.reply_to] + self.recipients
+        for header in headers:
+            if _has_newline(header):
+                return True
+
+        if self.subject:
+            if _has_newline(self.subject):
+                for linenum, line in enumerate(self.subject.split('\r\n')):
+                    if not line:
+                        return True
+                    if linenum > 0 and line[0] not in '\t ':
+                        return True
+                    if _has_newline(line):
+                        return True
+                    if len(line.strip()) == 0:
+                        return True
         return False
 
     def is_bad_headers(self):
