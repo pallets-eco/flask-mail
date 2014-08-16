@@ -13,7 +13,7 @@ from email import charset
 
 from flask import Flask
 from flask_mail import Mail, Message, BadHeaderError, sanitize_address
-
+from speaklater import make_lazy_string
 
 class TestCase(unittest.TestCase):
 
@@ -387,6 +387,12 @@ class TestMessage(TestCase):
 
         self.assertIn(h2.encode(), response)
         self.assertIn(h3.encode(), response)
+
+    def test_unicode_subject(self):
+        msg = Message(subject=make_lazy_string(lambda a: a, u"sübject"),
+                      sender='from@example.com',
+                      recipients=["to@example.com"])
+        self.assertIn('=?utf-8?q?s=C3=BCbject?=', msg.as_string())
 
     def test_extra_headers(self):
         msg = Message(sender="from@example.com",

@@ -314,13 +314,11 @@ class Message(object):
 
         if self.charset:
             try:
-                subject = Header(self.subject, encoding).encode()
+                self.subject = Header(self.subject, encoding).encode()
             except UnicodeEncodeError:
-                subject = Header(self.subject, 'utf-8').encode()
-            msg['Subject'] = subject
-        else:
-            msg['Subject'] = self.subject
+                self.subject = Header(self.subject, 'utf-8').encode()
 
+        msg['Subject'] = force_text(self.subject)
         msg['From'] = sanitize_address(self.sender, encoding)
         msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
 
