@@ -52,6 +52,18 @@ class TestCase(unittest.TestCase):
         return self.assertTrue(obj is not None)
 
 
+class TestInitialization(TestCase):
+
+    def test_init_mail(self):
+        mail = self.mail.init_mail(
+            self.app.config,
+            self.app.debug,
+            self.app.testing
+        )
+
+        self.assertEquals(self.mail.state.__dict__, mail.__dict__)
+
+
 class TestMessage(TestCase):
 
     def test_initialize(self):
