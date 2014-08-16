@@ -66,16 +66,15 @@ def force_text(s, encoding='utf-8', errors='strict'):
 
     try:
         if not isinstance(s, string_types):
-            if hasattr(s, '__unicode__'):
+            if PY3:
+                if isinstance(s, bytes):
+                    s = text_type(s, encoding, errors)
+                else:
+                    s = text_type(s)
+            elif hasattr(s, '__unicode__'):
                 s = s.__unicode__()
             else:
-                if PY3:
-                    if isinstance(s, bytes):
-                        s = text_type(s, encoding, errors)
-                    else:
-                        s = text_type(s)
-                else:
-                    s = text_type(bytes(s), encoding, errors)
+                s = text_type(bytes(s), encoding, errors)
         else:
             s = s.decode(encoding, errors)
     except UnicodeDecodeError as e:
