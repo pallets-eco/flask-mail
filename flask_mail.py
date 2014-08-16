@@ -251,7 +251,7 @@ class Message(object):
     :param rcpt_options:  A list of ESMTP options to be used in RCPT commands
     """
 
-    def __init__(self, subject=None,
+    def __init__(self, subject='',
                  recipients=None,
                  body=None,
                  html=None,
@@ -320,7 +320,9 @@ class Message(object):
             alternative.attach(self._mimetext(self.html, 'html'))
             msg.attach(alternative)
 
-        msg['Subject'] = sanitize_subject(force_text(self.subject), encoding)
+        if self.subject:
+            msg['Subject'] = sanitize_subject(force_text(self.subject), encoding)
+
         msg['From'] = sanitize_address(self.sender, encoding)
         msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
 

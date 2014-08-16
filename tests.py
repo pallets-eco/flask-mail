@@ -15,6 +15,7 @@ from flask import Flask
 from flask_mail import Mail, Message, BadHeaderError, sanitize_address
 from speaklater import make_lazy_string
 
+
 class TestCase(unittest.TestCase):
 
     TESTING = True
@@ -494,7 +495,12 @@ class TestMessage(TestCase):
         self.assertNotIn('Subject: =?', msg.as_string())
         self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
 
-
+    def test_empty_subject_header(self):
+        msg = Message(sender="from@example.com",
+                      recipients=["foo@bar.com"])
+        msg.body = "normal ascii text"
+        self.mail.send(msg)
+        self.assertNotIn('Subject:', msg.as_string())
 
 class TestMail(TestCase):
 
