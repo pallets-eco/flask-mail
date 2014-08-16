@@ -474,7 +474,7 @@ class TestMessage(TestCase):
                       recipients=["foo@bar.com"],
                       charset='utf-8')
         msg.body = u'内容'
-        self.assertIn('Subject: =?utf-8?', msg.as_string())
+        self.assertIn('Subject: subject', msg.as_string())
         self.assertIn('Content-Type: text/plain; charset="utf-8"', msg.as_string())
 
         # ascii subject

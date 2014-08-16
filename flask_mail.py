@@ -85,6 +85,15 @@ def force_text(s, encoding='utf-8', errors='strict'):
                     errors) for arg in s])
     return s
 
+def sanitize_subject(subject, encoding='utf-8'):
+    try:
+        subject.encode('ascii')
+    except UnicodeEncodeError:
+        try:
+            subject = Header(subject, encoding).encode()
+        except UnicodeEncodeError:
+            subject = Header(subject, 'utf-8').encode()
+    return subject
 
 def sanitize_address(addr, encoding='utf-8'):
     if isinstance(addr, string_types):
@@ -311,13 +320,7 @@ class Message(object):
             alternative.attach(self._mimetext(self.html, 'html'))
             msg.attach(alternative)
 
-        if self.charset:
-            try:
-                self.subject = Header(self.subject, encoding).encode()
-            except UnicodeEncodeError:
-                self.subject = Header(self.subject, 'utf-8').encode()
-
-        msg['Subject'] = force_text(self.subject)
+        msg['Subject'] = sanitize_subject(force_text(self.subject), encoding)
         msg['From'] = sanitize_address(self.sender, encoding)
         msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
 
