@@ -38,6 +38,7 @@ setup(
     tests_require=[
         'nose',
         'blinker',
+        'speaklater',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

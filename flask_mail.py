@@ -66,16 +66,15 @@ def force_text(s, encoding='utf-8', errors='strict'):
 
     try:
         if not isinstance(s, string_types):
-            if hasattr(s, '__unicode__'):
+            if PY3:
+                if isinstance(s, bytes):
+                    s = text_type(s, encoding, errors)
+                else:
+                    s = text_type(s)
+            elif hasattr(s, '__unicode__'):
                 s = s.__unicode__()
             else:
-                if PY3:
-                    if isinstance(s, bytes):
-                        s = text_type(s, encoding, errors)
-                    else:
-                        s = text_type(s)
-                else:
-                    s = text_type(bytes(s), encoding, errors)
+                s = text_type(bytes(s), encoding, errors)
         else:
             s = s.decode(encoding, errors)
     except UnicodeDecodeError as e:
@@ -86,6 +85,15 @@ def force_text(s, encoding='utf-8', errors='strict'):
                     errors) for arg in s])
     return s
 
+def sanitize_subject(subject, encoding='utf-8'):
+    try:
+        subject.encode('ascii')
+    except UnicodeEncodeError:
+        try:
+            subject = Header(subject, encoding).encode()
+        except UnicodeEncodeError:
+            subject = Header(subject, 'utf-8').encode()
+    return subject
 
 def sanitize_address(addr, encoding='utf-8'):
     if isinstance(addr, string_types):
@@ -312,15 +320,7 @@ class Message(object):
             alternative.attach(self._mimetext(self.html, 'html'))
             msg.attach(alternative)
 
-        if self.charset:
-            try:
-                subject = Header(self.subject, encoding).encode()
-            except UnicodeEncodeError:
-                subject = Header(self.subject, 'utf-8').encode()
-            msg['Subject'] = subject
-        else:
-            msg['Subject'] = self.subject
-
+        msg['Subject'] = sanitize_subject(force_text(self.subject), encoding)
         msg['From'] = sanitize_address(self.sender, encoding)
         msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
 

@@ -9,6 +9,7 @@ python:
 install:
   - pip install . --quiet
   - pip install nose --quiet
+  - pip install speaklater --quiet
 
 script: nosetests
 
