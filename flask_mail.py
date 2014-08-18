@@ -181,9 +181,17 @@ class Connection(object):
             message.date = time.time()
 
         if self.host:
+            # If message contains only ASCII characters, forward it as string;
+            # otherwise encode to bytes.
+            message_content = message.as_string()
+            try:
+                message_content.encode('ascii')
+            except UnicodeEncodeError:
+                charset = message.charset or 'utf-8'
+                message_content = message_content.encode(charset)
             self.host.sendmail(sanitize_address(envelope_from or message.sender),
                                message.send_to,
-                               message.as_string(),
+                               message_content,
                                message.mail_options,
                                message.rcpt_options)
 
