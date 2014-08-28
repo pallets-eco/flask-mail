@@ -141,8 +141,11 @@ class Connection(object):
 
         if self.mail.use_tls:
             host.starttls()
-        if self.mail.username and self.mail.password:
-            host.login(self.mail.username, self.mail.password)
+        if self.mail.username:
+            if self.mail.password:
+                host.login(self.mail.username, self.mail.password)
+            elif self.mail.xoauth2_token:
+                host.docmd('AUTH', 'XOAUTH2 ' + self.mail.xoauth2_token)
 
         return host
 
@@ -469,6 +472,7 @@ class _Mail(_MailMixin):
         self.debug = debug
         self.max_emails = max_emails
         self.suppress = suppress
+        self.xoauth2_token = '' # Must be set manually
 
 
 class Mail(_MailMixin):
