@@ -182,7 +182,7 @@ class Connection(object):
 
         if self.host:
             self.host.sendmail(sanitize_address(envelope_from or message.sender),
-                               message.send_to,
+                               list(sanitize_addresses(message.send_to)),
                                message.as_string(),
                                message.mail_options,
                                message.rcpt_options)
