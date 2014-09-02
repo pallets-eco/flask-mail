@@ -39,6 +39,7 @@ setup(
         'nose',
         'blinker',
         'speaklater',
+        'mock',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

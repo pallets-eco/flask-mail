@@ -7,6 +7,7 @@ import email
 import unittest
 import time
 import re
+import mock
 
 from email.header import Header
 from email import charset
@@ -587,3 +588,35 @@ class TestConnection(TestCase):
                       recipients=["to@example.com"])
         with self.mail.connect() as conn:
             self.assertRaises(BadHeaderError, conn.send, msg)
+
+    def test_sendmail_with_ascii_recipient(self):
+        with self.mail.connect() as conn:
+            with mock.patch.object(conn, 'host') as host:
+                msg = Message(subject="testing",
+                              sender="from@example.com",
+                              recipients=["to@example.com"],
+                              body="testing")
+                conn.send(msg)
+                host.sendmail.assert_called_once_with(
+                    "from@example.com",
+                    ["to@example.com"],
+                    msg.as_string(),
+                    msg.mail_options,
+                    msg.rcpt_options
+                )
+
+    def test_sendmail_with_non_ascii_recipient(self):
+        with self.mail.connect() as conn:
+            with mock.patch.object(conn, 'host') as host:
+                msg = Message(subject="testing",
+                              sender="from@example.com",
+                              recipients=[u'ÄÜÖ → ✓ <to@example.com>'],
+                              body="testing")
+                conn.send(msg)
+                host.sendmail.assert_called_once_with(
+                    "from@example.com",
+                    ["=?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <to@example.com>"],
+                    msg.as_string(),
+                    msg.mail_options,
+                    msg.rcpt_options
+                )
