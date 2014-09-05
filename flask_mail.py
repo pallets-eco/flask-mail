@@ -342,6 +342,7 @@ class Message(object):
             for k, v in self.extra_headers.items():
                 msg[k] = v
 
+        SPACES = re.compile(r'[\s]+', re.UNICODE)
         for attachment in attachments:
             f = MIMEBase(*attachment.content_type.split('/'))
             f.set_payload(attachment.data)
@@ -354,7 +355,7 @@ class Message(object):
                 filename = filename.encode('ascii', 'ignore')
                 filename, ext = filename.decode('ascii').rsplit(u'.')
                 ext = ext.strip()
-                filename = re.sub(r'[\s]+', u' ', filename, flags=re.UNICODE)
+                filename = SPACES.sub(u' ', filename)
                 filename = u'{}.{}'.format(filename.strip(), ext)
 
             try:
