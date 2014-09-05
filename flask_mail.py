@@ -356,7 +356,7 @@ class Message(object):
                 filename, ext = filename.decode('ascii').rsplit(u'.')
                 ext = ext.strip()
                 filename = SPACES.sub(u' ', filename)
-                filename = u'{}.{}'.format(filename.strip(), ext)
+                filename = u'{0}.{1}'.format(filename.strip(), ext)
 
             try:
                 filename and filename.encode('ascii')
