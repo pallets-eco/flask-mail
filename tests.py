@@ -8,6 +8,7 @@ import unittest
 import time
 import re
 import mock
+from contextlib import contextmanager
 
 from email.header import Header
 from email import charset
@@ -32,6 +33,24 @@ class TestCase(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.pop()
+
+    @contextmanager
+    def mail_config(self, **settings):
+        """
+        Context manager to alter mail config during a test and restore it after,
+        even in case of a failure.
+        """
+        original = {}
+        state = self.mail.state
+        for key in settings:
+            assert hasattr(state, key)
+            original[key] = getattr(state, key)
+            setattr(state, key, settings[key])
+
+        yield
+        # restore
+        for k, v in original.items():
+            setattr(state, k, v)
 
     def assertIn(self, member, container, msg=None):
         if hasattr(unittest.TestCase, 'assertIn'):
@@ -276,7 +295,7 @@ class TestMessage(TestCase):
                    content_type="text/plain",
                    filename='test doc.txt')
 
-        self.assertIn('Content-Disposition: attachment;filename=test doc.txt', msg.as_string())
+        self.assertIn('Content-Disposition: attachment; filename="test doc.txt"', msg.as_string())
 
     def test_plain_message_with_unicode_attachment(self):
         msg = Message(subject="subject",
@@ -293,6 +312,22 @@ class TestMessage(TestCase):
             'attachment; filename*="UTF8\'\'%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt"',
             'attachment; filename*=UTF8\'\'%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt'
             ])
+
+    def test_plain_message_with_ascii_converted_attachment(self):
+        with self.mail_config(ascii_attachments=True):
+            msg = Message(subject="subject",
+                          recipients=["to@example.com"],
+                          body="hello")
+
+            msg.attach(data=b"this is a test",
+                       content_type="text/plain",
+                       filename=u'ünicöde ←→ ✓.txt')
+
+            parsed = email.message_from_string(msg.as_string())
+            self.assertIn(
+                'Content-Disposition: attachment; filename="unicode.txt"',
+                msg.as_string())
+
 
     def test_html_message(self):
         html_text = "<p>Hello World</p>"
