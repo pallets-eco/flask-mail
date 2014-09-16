@@ -183,7 +183,7 @@ class Connection(object):
         if self.host:
             self.host.sendmail(sanitize_address(envelope_from or message.sender),
                                list(sanitize_addresses(message.send_to)),
-                               message.as_string(),
+                               message.as_bytes() if PY3 else message.as_string(),
                                message.mail_options,
                                message.rcpt_options)
 
@@ -298,7 +298,7 @@ class Message(object):
         charset = self.charset or 'utf-8'
         return MIMEText(text, _subtype=subtype, _charset=charset)
 
-    def as_string(self):
+    def _message(self):
         """Creates the email"""
 
         encoding = self.charset or 'utf-8'
@@ -364,10 +364,19 @@ class Message(object):
         if message_policy:
             msg.policy = message_policy
 
-        return msg.as_string()
+        return msg
+
+    def as_string(self):
+        return self._message().as_string()
+
+    def as_bytes(self):
+        return self._message().as_bytes()
 
     def __str__(self):
         return self.as_string()
+
+    def __bytes__(self):
+        return self.as_bytes()
 
     def has_bad_headers(self):
         """Checks for bad headers i.e. newlines in subject, sender or recipients.
