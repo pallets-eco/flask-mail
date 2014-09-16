@@ -31,6 +31,8 @@ from flask import current_app
 
 PY3 = sys.version_info[0] == 3
 
+PY34 = PY3 and sys.version_info[1] >= 4
+
 if PY3:
     string_types = str,
     text_type = str
@@ -370,7 +372,10 @@ class Message(object):
         return self._message().as_string()
 
     def as_bytes(self):
-        return self._message().as_bytes()
+        if PY34:
+            return self._message().as_bytes()
+        else: # fallback for old Python (3) versions
+            return self._message().as_string().encode(self.charset or 'utf-8')
 
     def __str__(self):
         return self.as_string()
