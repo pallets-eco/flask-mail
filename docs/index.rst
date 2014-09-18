@@ -58,6 +58,8 @@ options (each is explained later in the documentation):
 
 * **MAIL_SUPPRESS_SEND** : default **app.testing**
 
+* **MAIL_ASCII_ATTACHMENTS** : default **False**
+
 In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Mail**
 in unit tests (see below).
 
@@ -162,6 +164,15 @@ Adding attachments is straightforward::
         msg.attach("image.png", "image/png", fp.read())
 
 See the `API`_ for details.
+
+If ``MAIL_ASCII_ATTACHMENTS`` is set to **True**, filenames will be converted to
+an ASCII equivalent. This can be useful when using a mail relay that modify mail
+content and mess up Content-Disposition specification when filenames are UTF-8
+encoded. The conversion to ASCII is a basic removal of non-ASCII characters. It
+should be fine for any unicode character that can be decomposed by NFKD into one
+or more ASCII characters. If you need romanization/transliteration (i.e `ß` →
+`ss`) then your application should do it and pass a proper ASCII string.
+
 
 Unit tests and suppressing emails
 ---------------------------------

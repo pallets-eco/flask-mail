@@ -13,10 +13,12 @@ from __future__ import with_statement
 
 __version__ = '0.9.0'
 
+import re
 import blinker
 import smtplib
 import sys
 import time
+import unicodedata
 
 from email import charset
 from email.encoders import encode_base64
@@ -302,7 +304,7 @@ class Message(object):
 
     def _message(self):
         """Creates the email"""
-
+        ascii_attachments = current_app.extensions['mail'].ascii_attachments
         encoding = self.charset or 'utf-8'
 
         attachments = self.attachments or []
@@ -342,22 +344,29 @@ class Message(object):
             for k, v in self.extra_headers.items():
                 msg[k] = v
 
+        SPACES = re.compile(r'[\s]+', re.UNICODE)
         for attachment in attachments:
             f = MIMEBase(*attachment.content_type.split('/'))
             f.set_payload(attachment.data)
             encode_base64(f)
 
+            filename = attachment.filename
+            if filename and ascii_attachments:
+                # force filename to ascii
+                filename = unicodedata.normalize('NFKD', filename)
+                filename = filename.encode('ascii', 'ignore').decode('ascii')
+                filename = SPACES.sub(u' ', filename).strip()
+
             try:
-                attachment.filename and attachment.filename.encode('ascii')
+                filename and filename.encode('ascii')
             except UnicodeEncodeError:
-                filename = attachment.filename
                 if not PY3:
                     filename = filename.encode('utf8')
-                f.add_header('Content-Disposition', attachment.disposition,
-                            filename=('UTF8', '', filename))
-            else:
-                f.add_header('Content-Disposition', '%s;filename=%s' %
-                             (attachment.disposition, attachment.filename))
+                filename = ('UTF8', '', filename)
+
+            f.add_header('Content-Disposition',
+                         attachment.disposition,
+                         filename=filename)
 
             for key, value in attachment.headers:
                 f.add_header(key, value)
@@ -503,7 +512,8 @@ class _MailMixin(object):
 
 class _Mail(_MailMixin):
     def __init__(self, server, username, password, port, use_tls, use_ssl,
-                 default_sender, debug, max_emails, suppress):
+                 default_sender, debug, max_emails, suppress,
+                 ascii_attachments=False):
         self.server = server
         self.username = username
         self.password = password
@@ -514,6 +524,7 @@ class _Mail(_MailMixin):
         self.debug = debug
         self.max_emails = max_emails
         self.suppress = suppress
+        self.ascii_attachments = ascii_attachments
 
 
 class Mail(_MailMixin):
@@ -540,7 +551,9 @@ class Mail(_MailMixin):
             config.get('MAIL_DEFAULT_SENDER'),
             int(config.get('MAIL_DEBUG', debug)),
             config.get('MAIL_MAX_EMAILS'),
-            config.get('MAIL_SUPPRESS_SEND', testing))
+            config.get('MAIL_SUPPRESS_SEND', testing),
+            config.get('MAIL_ASCII_ATTACHMENTS', False)
+        )
 
     def init_app(self, app):
         """Initializes your mail settings from the application settings.
