@@ -352,11 +352,8 @@ class Message(object):
             if filename and ascii_attachments:
                 # force filename to ascii
                 filename = unicodedata.normalize('NFKD', filename)
-                filename = filename.encode('ascii', 'ignore')
-                filename, ext = filename.decode('ascii').rsplit(u'.')
-                ext = ext.strip()
-                filename = SPACES.sub(u' ', filename)
-                filename = u'{0}.{1}'.format(filename.strip(), ext)
+                filename = filename.encode('ascii', 'ignore').decode('ascii')
+                filename = SPACES.sub(u' ', filename).strip()
 
             try:
                 filename and filename.encode('ascii')

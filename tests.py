@@ -321,13 +321,12 @@ class TestMessage(TestCase):
 
             msg.attach(data=b"this is a test",
                        content_type="text/plain",
-                       filename=u'ünicöde ←→ ✓.txt')
+                       filename=u'ünicödeß ←.→ ✓.txt')
 
             parsed = email.message_from_string(msg.as_string())
             self.assertIn(
-                'Content-Disposition: attachment; filename="unicode.txt"',
+                'Content-Disposition: attachment; filename="unicode . .txt"',
                 msg.as_string())
-
 
     def test_html_message(self):
         html_text = "<p>Hello World</p>"
