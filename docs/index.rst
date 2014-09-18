@@ -163,12 +163,16 @@ Adding attachments is straightforward::
     with app.open_resource("image.png") as fp:
         msg.attach("image.png", "image/png", fp.read())
 
-If ``MAIL_ASCII_ATTACHMENTS`` is set to **True**, filenames will be converted to
-an ascii equivalent. This can be useful when using a mail relay that modify mail
-content and mess up Content-Disposition specification when filenames are UTF-8
-encoded.
-
 See the `API`_ for details.
+
+If ``MAIL_ASCII_ATTACHMENTS`` is set to **True**, filenames will be converted to
+an ASCII equivalent. This can be useful when using a mail relay that modify mail
+content and mess up Content-Disposition specification when filenames are UTF-8
+encoded. The conversion to ASCII is a basic removal of non-ASCII characters. It
+should be fine for any unicode character that can be decomposed by NFKD into one
+or more ASCII characters. If you need romanization/transliteration (i.e `ß` →
+`ss`) then your application should do it and pass a proper ASCII string.
+
 
 Unit tests and suppressing emails
 ---------------------------------
