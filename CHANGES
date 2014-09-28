@@ -4,6 +4,18 @@ Flask-Mail Changelog
 Here you can see the full list of changes between each Flask-Mail release.
 
 
+Version 0.9.1
+-------------
+
+Released September 28 2014
+
+- Add an option for force ASCII file attachments
+- Fix `force_text` function
+- Fix some Python 3 support regarding email policy
+- Added support ESMTP options
+- Fixed various unicode issues related to message attachments, subjects, and email addresses
+
+
 Version 0.9.0
 -------------
 
