@@ -184,7 +184,7 @@ If the setting ``TESTING`` is set to ``True``, emails will be
 suppressed. Calling ``send()`` on your messages will not result in
 any messages being actually sent.
 
-Alternatively outside a testing environment you can set ``MAIL_SUPPRESS_SEND`` to **False**. This
+Alternatively outside a testing environment you can set ``MAIL_SUPPRESS_SEND`` to **True**. This
 will have the same effect.
 
 However, it's still useful to keep track of emails that would have been
