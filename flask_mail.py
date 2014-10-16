@@ -381,10 +381,7 @@ class Message(object):
         return self._message().as_string()
 
     def as_bytes(self):
-        if PY34:
-            return self._message().as_bytes()
-        else: # fallback for old Python (3) versions
-            return self._message().as_string().encode(self.charset or 'utf-8')
+        return self._message().as_string().encode(self.charset or 'utf-8')
 
     def __str__(self):
         return self.as_string()
