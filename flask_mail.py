@@ -14,6 +14,7 @@ from __future__ import with_statement
 __version__ = '0.9.0'
 
 import blinker
+import rfc822
 import smtplib
 import sys
 import time
@@ -256,7 +257,7 @@ class Message(object):
         sender = sender
 
         if isinstance(sender, tuple):
-            sender = "%s <%s>" % sender
+            sender = rfc822.dump_address_pair(sender)
 
         self.recipients = recipients or []
         self.subject = subject
