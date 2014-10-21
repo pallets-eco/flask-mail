@@ -146,6 +146,7 @@ class Connection(object):
             if self.mail.password:
                 host.login(self.mail.username, self.mail.password)
             elif self.mail.xoauth2_token:
+                host.ehlo_or_helo_if_needed()
                 host.docmd('AUTH', 'XOAUTH2 ' + self.mail.xoauth2_token)
 
         return host
