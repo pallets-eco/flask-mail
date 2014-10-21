@@ -243,6 +243,7 @@ class Message(object):
     :param recipients: list of email addresses
     :param body: plain text message
     :param html: HTML message
+    :param alts: A dict or an iterable to go through dict() that contains multipart alternatives
     :param sender: email sender address, or **MAIL_DEFAULT_SENDER** by default
     :param cc: CC list
     :param bcc: BCC list
@@ -259,6 +260,7 @@ class Message(object):
                  recipients=None,
                  body=None,
                  html=None,
+                 alts=None,
                  sender=None,
                  cc=None,
                  bcc=None,
@@ -282,6 +284,7 @@ class Message(object):
         self.cc = cc or []
         self.bcc = bcc or []
         self.body = body
+        self.alts = dict(alts or {})
         self.html = html
         self.date = date
         self.msgId = make_msgid()
@@ -294,6 +297,17 @@ class Message(object):
     @property
     def send_to(self):
         return set(self.recipients) | set(self.bcc or ()) | set(self.cc or ())
+
+    @property
+    def html(self):
+        return self.alts.get('html')
+
+    @html.setter
+    def html(self, value):
+        if value is None:
+            self.alts.pop('html', None)
+        else:
+            self.alts['html'] = value
 
     def _mimetext(self, text, subtype='plain'):
         """Creates a MIMEText object with the given subtype (default: 'plain')
@@ -309,10 +323,10 @@ class Message(object):
 
         attachments = self.attachments or []
 
-        if len(attachments) == 0 and not self.html:
+        if len(attachments) == 0 and not self.alts:
             # No html content and zero attachments means plain text
             msg = self._mimetext(self.body)
-        elif len(attachments) > 0 and not self.html:
+        elif len(attachments) > 0 and not self.alts:
             # No html and at least one attachment means multipart
             msg = MIMEMultipart()
             msg.attach(self._mimetext(self.body))
@@ -321,7 +335,8 @@ class Message(object):
             msg = MIMEMultipart()
             alternative = MIMEMultipart('alternative')
             alternative.attach(self._mimetext(self.body, 'plain'))
-            alternative.attach(self._mimetext(self.html, 'html'))
+            for mimetype, content in self.alts.items():
+                alternative.attach(self._mimetext(content, mimetype))
             msg.attach(alternative)
 
         if self.subject:
