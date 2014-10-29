@@ -338,6 +338,16 @@ class TestMessage(TestCase):
         self.assertEqual(html_text, msg.html)
         self.assertIn('Content-Type: multipart/alternative', msg.as_string())
 
+    def test_json_message(self):
+        json_text = '{"msg": "Hello World!}'
+        msg = Message(sender="from@example.com",
+                      subject="subject",
+                      recipients=["to@example.com"],
+                      alts={'json': json_text})
+
+        self.assertEqual(json_text, msg.alts['json'])
+        self.assertIn('Content-Type: multipart/alternative', msg.as_string())
+
     def test_html_message_with_attachments(self):
         html_text = "<p>Hello World</p>"
         plain_text = 'Hello World'
