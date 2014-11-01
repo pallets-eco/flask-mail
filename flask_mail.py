@@ -383,7 +383,7 @@ class Message(object):
                          attachment.disposition,
                          filename=filename)
 
-            for key, value in attachment.headers:
+            for key, value in attachment.headers.items():
                 f.add_header(key, value)
 
             msg.attach(f)
