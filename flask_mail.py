@@ -496,15 +496,16 @@ class _MailMixin(object):
         finally:
             email_dispatched.disconnect(_record)
 
-    def send(self, message):
+    def send(self, message, envelope_from=None):
         """Sends a single message instance. If TESTING is True the message will
         not actually be sent.
 
         :param message: a Message instance.
+        :param envelope_from: Email address to be used in MAIL FROM command.
         """
 
         with self.connect() as connection:
-            message.send(connection)
+            connection.send(message, envelope_from)
 
     def send_message(self, *args, **kwargs):
         """Shortcut for send(msg).
