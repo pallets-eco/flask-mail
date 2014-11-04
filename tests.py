@@ -92,7 +92,7 @@ class TestMessage(TestCase):
     def test_sender_as_tuple(self):
         msg = Message(subject="testing",
                       sender=("tester", "tester@example.com"))
-        self.assertEqual('"tester" <tester@example.com>', msg.sender)
+        self.assertEqual('tester <tester@example.com>', msg.sender)
 
     def test_reply_to(self):
         msg = Message(subject="testing",
