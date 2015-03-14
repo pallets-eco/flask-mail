@@ -12,7 +12,13 @@ install:
   - pip install nose --quiet
   - pip install speaklater --quiet
 
-script: nosetests
+before_script:
+  - wget https://storage.googleapis.com/appengine-sdks/featured/google_appengine_1.9.17.zip -nv
+  - unzip -q google_appengine_1.9.17.zip
+
+script:
+  - export PYTHONPATH=$PYTHONPATH:google_appengine
+  - nosetests
 
 branches:
   only:

@@ -3,18 +3,20 @@
 from __future__ import with_statement
 
 import base64
-import email
-import unittest
-import time
-import re
-import mock
 from contextlib import contextmanager
+import email
+import logging
+import mock
+import re
+import time
+import unittest
 
 from email.header import Header
 from email import charset
 
 from flask import Flask
-from flask_mail import Mail, Message, BadHeaderError, sanitize_address, PY3
+from flask_mail import (
+    Mail, Message, BadHeaderError, appengine_mail, sanitize_address, PY3)
 from speaklater import make_lazy_string
 
 
@@ -701,3 +703,113 @@ class TestConnection(TestCase):
                     msg.mail_options,
                     msg.rcpt_options
                 )
+
+if not appengine_mail:
+    # App Engine not available in this environment
+    logging.error("Cannot run App Engine tests")
+else:
+    import dev_appserver
+    dev_appserver.fix_sys_path()
+    from google.appengine.ext import testbed
+
+
+    class TestAppEngine(TestCase):
+
+        MAIL_USE_APPENGINE = True
+
+        def setUp(self):
+            super(TestAppEngine, self).setUp()
+            self.testbed = testbed.Testbed()
+            self.testbed.activate()
+            self.testbed.init_mail_stub()
+            self.mail_stub = self.testbed.get_stub(testbed.MAIL_SERVICE_NAME)
+
+        def tearDown(self):
+            super(TestAppEngine, self).tearDown()
+            self.testbed.deactivate()
+
+        def test_send_single(self):
+            with self.mail.connect() as conn:
+                msg = Message(subject="testing",
+                              recipients=["to@example.com"],
+                              body="testing")
+                conn.send(msg)
+            outbox = self.mail_stub.get_sent_messages()
+            self.assertEqual(len(outbox), 1)
+            sent_msg = outbox[0]
+            self.assertEqual("testing", sent_msg.subject)
+            self.assertEqual("to@example.com", sent_msg.to)
+            self.assertEqual("testing", sent_msg.body.decode())
+            self.assertEqual(
+                self.app.extensions["mail"].default_sender,
+                sent_msg.sender)
+
+        def test_send_many(self):
+            with self.mail.connect() as conn:
+                for i in range(100):
+                    msg = Message(subject="testing",
+                                  recipients=["to@example.com"],
+                                  body="testing")
+                    conn.send(msg)
+            outbox = self.mail_stub.get_sent_messages()
+            self.assertEqual(len(outbox), 100)
+            sent_msg = outbox[0]
+            self.assertEqual(
+                self.app.extensions["mail"].default_sender,
+                sent_msg.sender)
+
+        def test_bcc(self):
+            with self.mail.connect() as conn:
+                msg = Message(sender="from@example.com",
+                              subject="testing",
+                              recipients=["to@example.com"],
+                              body="testing",
+                              bcc=["tosomeoneelse@example.com"])
+                conn.send(msg)
+            outbox = self.mail_stub.get_sent_messages()
+            self.assertEqual(len(outbox), 1)
+            sent_msg = outbox[0]
+            self.assertEquals("tosomeoneelse@example.com", sent_msg.bcc)
+            self.assertEquals("to@example.com", sent_msg.to)
+
+        def test_cc(self):
+            with self.mail.connect() as conn:
+                msg = Message(sender="from@example.com",
+                              subject="testing",
+                              recipients=["to@example.com"],
+                              body="testing",
+                              cc=["tosomeoneelse@example.com"])
+                conn.send(msg)
+            outbox = self.mail_stub.get_sent_messages()
+            self.assertEqual(len(outbox), 1)
+            sent_msg = outbox[0]
+            self.assertIn("tosomeoneelse@example.com", sent_msg.cc)
+
+        def test_attach(self):
+            with self.mail.connect() as conn:
+                msg = Message(subject="testing",
+                              recipients=["to@example.com"],
+                              body="testing")
+                msg.attach(data=b"this is a test",
+                           content_type="text/plain",
+                           filename="my_filename.txt")
+                conn.send(msg)
+            outbox = self.mail_stub.get_sent_messages()
+            self.assertEqual(len(outbox), 1)
+            sent_msg = outbox[0]
+
+            self.assertEquals(1, len(sent_msg.attachments))
+            filename, part = sent_msg.attachments[0]
+            self.assertEquals("my_filename.txt", filename)
+            self.assertEqual(part.payload.decode(), b"this is a test")
+
+        def test_send_without_sender(self):
+            self.app.extensions["mail"].default_sender = None
+            msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
+            self.assertRaises(AssertionError, self.mail.send, msg)
+
+        def test_send_without_recipients(self):
+            msg = Message(subject="testing",
+                          recipients=[],
+                          body="testing")
+            self.assertRaises(AssertionError, self.mail.send, msg)
