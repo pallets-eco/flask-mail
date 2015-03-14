@@ -349,6 +349,8 @@ class Message(object):
 
     def as_mime_message(self):
         """Creates the email and returns its contents as a MIME message."""
+        ascii_attachments = current_app.extensions['mail'].ascii_attachments
+        encoding = self.charset or 'utf-8'
         attachments = self.attachments or []
 
         if len(attachments) == 0 and not self.alts:
@@ -372,7 +374,6 @@ class Message(object):
 
         msg['From'] = sanitize_address(self.sender, encoding)
         msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
-
         msg['Date'] = formatdate(self.date, localtime=True)
 
         # see RFC 5322 section 3.6.4.
@@ -417,6 +418,7 @@ class Message(object):
                 f.add_header(key, value)
 
             msg.attach(f)
+
         if message_policy:
             msg.policy = message_policy
 

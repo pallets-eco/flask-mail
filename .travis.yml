@@ -13,8 +13,8 @@ install:
   - pip install speaklater --quiet
 
 before_script:
-  - wget https://googleappengine.googlecode.com/files/google_appengine_1.8.2.zip -nv
-  - unzip -q google_appengine_1.8.2.zip
+  - wget https://storage.googleapis.com/appengine-sdks/featured/google_appengine_1.9.17.zip -nv
+  - unzip -q google_appengine_1.9.17.zip
 
 script:
   - export PYTHONPATH=$PYTHONPATH:google_appengine
