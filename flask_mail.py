@@ -204,6 +204,7 @@ class Connection(object):
                                message.mail_options,
                                message.rcpt_options)
         elif self.mail.use_appengine:
+            print(message.as_mime_message())
             email_message = appengine_mail.EmailMessage(
                 mime_message=message.as_mime_message())
             # BCC doesn't copy through the MIME conversion because it is

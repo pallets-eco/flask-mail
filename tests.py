@@ -706,7 +706,7 @@ class TestConnection(TestCase):
 
 if not appengine_mail:
     # App Engine not available in this environment
-    logging.error('Cannot run App Engine tests')
+    logging.error("Cannot run App Engine tests")
 else:
     import dev_appserver
     dev_appserver.fix_sys_path()
@@ -741,7 +741,7 @@ else:
             self.assertEqual("to@example.com", sent_msg.to)
             self.assertEqual("testing", sent_msg.body.decode())
             self.assertEqual(
-                self.app.extensions['mail'].default_sender,
+                self.app.extensions["mail"].default_sender,
                 sent_msg.sender)
 
         def test_send_many(self):
@@ -755,7 +755,7 @@ else:
             self.assertEqual(len(outbox), 100)
             sent_msg = outbox[0]
             self.assertEqual(
-                self.app.extensions['mail'].default_sender,
+                self.app.extensions["mail"].default_sender,
                 sent_msg.sender)
 
         def test_bcc(self):
@@ -791,7 +791,8 @@ else:
                               recipients=["to@example.com"],
                               body="testing")
                 msg.attach(data=b"this is a test",
-                           content_type="text/plain")
+                           content_type="text/plain",
+                           filename="my_filename.txt")
                 conn.send(msg)
             outbox = self.mail_stub.get_sent_messages()
             self.assertEqual(len(outbox), 1)
@@ -799,14 +800,11 @@ else:
 
             self.assertEquals(1, len(sent_msg.attachments))
             filename, part = sent_msg.attachments[0]
-            # When the filename isn't specified, the parameter is still
-            # set in the content-disposition header, which the email Python
-            # module needs to parse out that section as an attachment.
-            self.assertEquals('None', filename)
+            self.assertEquals("my_filename.txt", filename)
             self.assertEqual(part.payload.decode(), b"this is a test")
 
         def test_send_without_sender(self):
-            self.app.extensions['mail'].default_sender = None
+            self.app.extensions["mail"].default_sender = None
             msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
             self.assertRaises(AssertionError, self.mail.send, msg)
 
