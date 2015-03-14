@@ -1,0 +1,17 @@
+application: your-app-id-here
+version: your-version-here
+runtime: python27
+api_version: 1
+threadsafe: true
+
+libraries:
+- name: jinja2
+  version: "2.6"
+- name: markupsafe
+  version: "0.15"
+
+handlers:
+
+- url: .*
+  script: main.app
+  login: required
