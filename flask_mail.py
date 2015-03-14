@@ -148,7 +148,7 @@ class Connection(object):
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        if self.host:
+        if self.host and getattr(self.host, 'sock', None):
             self.host.quit()
 
     def configure_host(self):
