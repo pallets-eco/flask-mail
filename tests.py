@@ -8,6 +8,9 @@ import unittest
 import time
 import re
 import mock
+import smtplib
+import socket
+import threading
 from contextlib import contextmanager
 
 from email.header import Header
@@ -701,3 +704,55 @@ class TestConnection(TestCase):
                     msg.mail_options,
                     msg.rcpt_options
                 )
+
+
+class TestAgainstLocalServer(TestCase):
+    def setUp(self):
+        def bind_server_socket():
+            server_socket = socket.socket()
+            server_socket.bind(('localhost', 0))
+            server_socket.settimeout(5)  # ensure thread dies
+            server_socket.listen(1)
+            return server_socket
+
+        def server_threadfunc(server_socket, errors):
+            try:
+                client_socket, client_info = server_socket.accept()
+                client_socket.settimeout(5)  # ensure thread dies
+                client_socket.send('220 localhost ESMTP blah blah blah\r\n')
+                client_socket.recv(1024)
+                client_socket.send('250 ok\r\n')
+                client_socket.close()  # unexpected disconnect
+            except Exception as exc:
+                errors.append(exc)
+
+        server_socket = bind_server_socket()
+        self.MAIL_SERVER, self.MAIL_PORT = server_socket.getsockname()
+        self._server_errors = []
+        thread = threading.Thread(target=server_threadfunc,
+                                  args=(server_socket, self._server_errors))
+        self._server_thread = thread
+        thread.daemon = True
+        thread.start()
+        super(TestAgainstLocalServer, self).setUp()
+        self._old_app_mail_instance = self.app.extensions['mail']
+        self.app.extensions['mail'] = self.mail
+        self.mail.suppress = False  # do live testing
+
+    def tearDown(self):
+        self._server_thread.join()
+        assert not self._server_errors, self._server_errors
+        self.app.extensions['mail'] = self._old_app_mail_instance
+        super(TestAgainstLocalServer, self).tearDown()
+
+    def test_detect_disconnect_during_send(self):
+        msg = Message(sender="from@example.com",
+                      subject="subject",
+                      recipients=["to@example.com"],
+                      body="some plain text")
+        try:
+            self.mail.send(msg)
+            assert False  # exception expected
+        except smtplib.SMTPServerDisconnected as e:
+            assert e.args[0] == 'Connection unexpectedly closed', e.args[0]
+
