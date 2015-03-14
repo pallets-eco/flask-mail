@@ -719,9 +719,9 @@ class TestAgainstLocalServer(TestCase):
             try:
                 client_socket, client_info = server_socket.accept()
                 client_socket.settimeout(5)  # ensure thread dies
-                client_socket.send('220 localhost ESMTP blah blah blah\r\n')
+                client_socket.send(b'220 localhost ESMTP blah blah blah\r\n')
                 client_socket.recv(1024)
-                client_socket.send('250 ok\r\n')
+                client_socket.send(b'250 ok\r\n')
                 client_socket.close()  # unexpected disconnect
             except Exception as exc:
                 errors.append(exc)
