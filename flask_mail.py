@@ -38,11 +38,14 @@ PY34 = PY3 and sys.version_info[1] >= 4
 if PY3:
     string_types = str,
     text_type = str
-    from email import policy
-    message_policy = policy.SMTP
 else:
     string_types = basestring,
     text_type = unicode
+
+try:
+    from email import policy
+    message_policy = policy.SMTP
+except ImportError:
     message_policy = None
 
 charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
