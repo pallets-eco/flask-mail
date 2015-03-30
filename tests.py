@@ -337,6 +337,7 @@ class TestMessage(TestCase):
 
         self.assertEqual(html_text, msg.html)
         self.assertIn('Content-Type: multipart/alternative', msg.as_string())
+        self.assertIn('Content-Type: text/html', msg.as_string())
 
     def test_json_message(self):
         json_text = '{"msg": "Hello World!}'
@@ -361,6 +362,8 @@ class TestMessage(TestCase):
 
         self.assertEqual(html_text, msg.html)
         self.assertIn('Content-Type: multipart/alternative', msg.as_string())
+        self.assertIn('Content-Type: text/html', msg.as_string())
+        self.assertIn('Content-Type: text/plain', msg.as_string())
 
         parsed = email.message_from_string(msg.as_string())
         self.assertEqual(len(parsed.get_payload()), 2)
@@ -546,6 +549,22 @@ class TestMessage(TestCase):
         msg.body = "normal ascii text"
         self.mail.send(msg)
         self.assertNotIn('Subject:', msg.as_string())
+
+    def test_custom_subtype_without_attachment(self):
+        msg = Message(sender="from@example.com",
+                      subject="testing",
+                      recipients=["to@example.com"],
+                      subtype="html")
+        self.assertIn('Content-Type: text/html', msg.as_string())
+
+    def test_custom_subtype_with_attachment(self):
+        msg = Message(sender="from@example.com",
+                      subject="testing",
+                      recipients=["to@example.com"],
+                      subtype="related")
+        msg.attach(data=b"this is a test",
+                   content_type="text/plain")
+        self.assertIn('Content-Type: multipart/related', msg.as_string())
 
 class TestMail(TestCase):
 

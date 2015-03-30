@@ -254,6 +254,7 @@ class Message(object):
     :param extra_headers: A dictionary of additional headers for the message
     :param mail_options: A list of ESMTP options to be used in MAIL FROM command
     :param rcpt_options:  A list of ESMTP options to be used in RCPT commands
+    :param subtype:  Media subtype name for a message
     """
 
     def __init__(self, subject='',
@@ -270,7 +271,8 @@ class Message(object):
                  charset=None,
                  extra_headers=None,
                  mail_options=None,
-                 rcpt_options=None):
+                 rcpt_options=None,
+                 subtype=None):
 
         sender = sender or current_app.extensions['mail'].default_sender
 
@@ -290,6 +292,7 @@ class Message(object):
         self.msgId = make_msgid()
         self.charset = charset
         self.extra_headers = extra_headers
+        self.subtype = subtype
         self.mail_options = mail_options or []
         self.rcpt_options = rcpt_options or []
         self.attachments = attachments or []
@@ -309,10 +312,11 @@ class Message(object):
         else:
             self.alts['html'] = value
 
-    def _mimetext(self, text, subtype='plain'):
+    def _mimetext(self, text, subtype=None):
         """Creates a MIMEText object with the given subtype (default: 'plain')
         If the text is unicode, the utf-8 charset is used.
         """
+        subtype = subtype or 'plain'
         charset = self.charset or 'utf-8'
         return MIMEText(text, _subtype=subtype, _charset=charset)
 
@@ -325,16 +329,18 @@ class Message(object):
 
         if len(attachments) == 0 and not self.alts:
             # No html content and zero attachments means plain text
-            msg = self._mimetext(self.body)
+            msg = self._mimetext(self.body, self.subtype)
         elif len(attachments) > 0 and not self.alts:
             # No html and at least one attachment means multipart
-            msg = MIMEMultipart()
+            subtype = self.subtype or 'mixed'
+            msg = MIMEMultipart(_subtype=subtype)
             msg.attach(self._mimetext(self.body))
         else:
             # Anything else
-            msg = MIMEMultipart()
-            alternative = MIMEMultipart('alternative')
-            alternative.attach(self._mimetext(self.body, 'plain'))
+            subtype = self.subtype or 'mixed'
+            msg = MIMEMultipart(_subtype=subtype)
+            alternative = MIMEMultipart(_subtype='alternative')
+            alternative.attach(self._mimetext(self.body))
             for mimetype, content in self.alts.items():
                 alternative.attach(self._mimetext(content, mimetype))
             msg.attach(alternative)
