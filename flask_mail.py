@@ -11,7 +11,7 @@
 
 from __future__ import with_statement
 
-__version__ = '0.9.1'
+__version__ = '0.9.2'
 
 import re
 import blinker
@@ -225,15 +225,17 @@ class Attachment(object):
     :param content_type: file mimetype
     :param data: the raw file data
     :param disposition: content-disposition (if any)
+    :param content_id: content-id for inline reference
     """
 
     def __init__(self, filename=None, content_type=None, data=None,
-                 disposition=None, headers=None):
+                 disposition=None, headers=None, content_id=None):
         self.filename = filename
         self.content_type = content_type
         self.data = data
         self.disposition = disposition or 'attachment'
         self.headers = headers or {}
+        self.content_id = content_id
 
 
 class Message(object):
@@ -297,7 +299,7 @@ class Message(object):
     @property
     def send_to(self):
         return set(self.recipients) | set(self.bcc or ()) | set(self.cc or ())
-
+    
     @property
     def html(self):
         return self.alts.get('html')
@@ -308,7 +310,7 @@ class Message(object):
             self.alts.pop('html', None)
         else:
             self.alts['html'] = value
-
+    
     def _mimetext(self, text, subtype='plain'):
         """Creates a MIMEText object with the given subtype (default: 'plain')
         If the text is unicode, the utf-8 charset is used.
@@ -379,12 +381,19 @@ class Message(object):
                     filename = filename.encode('utf8')
                 filename = ('UTF8', '', filename)
 
-            f.add_header('Content-Disposition',
-                         attachment.disposition,
-                         filename=filename)
+            try:
+                f.replace_header('Content-Disposition', attachment.disposition +';'+ ' filename=' + filename)
+            except KeyError:
+                f.add_header('Content-Disposition', attachment.disposition, filename=filename)
 
             for key, value in attachment.headers.items():
                 f.add_header(key, value)
+
+            if attachment.content_id:
+                try:
+                    f.replace_header('Content-ID', attachment.content_id)
+                except KeyError:
+                    f.add_header('Content-ID', attachment.content_id)
 
             msg.attach(f)
         if message_policy:
@@ -454,16 +463,18 @@ class Message(object):
                content_type=None,
                data=None,
                disposition=None,
-               headers=None):
+               headers=None,
+               content_id=None):
         """Adds an attachment to the message.
 
         :param filename: filename of attachment
         :param content_type: file mimetype
         :param data: the raw file data
         :param disposition: content-disposition (if any)
+        :param content_id: content-id
         """
         self.attachments.append(
-            Attachment(filename, content_type, data, disposition, headers))
+            Attachment(filename, content_type, data, disposition, headers, content_id))
 
 
 class _MailMixin(object):
