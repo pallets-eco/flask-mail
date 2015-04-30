@@ -46,7 +46,12 @@ Version 0.8.0
 Released April 03 2013
 
 - Fixed a bug with duplicate recipients
-- Changed configuration options to be less confusing
+- Changed configuration options to be less confusing (**backward incopatible**),
+  update settings accordingly :
+   - `DEFAULT_MAIL_SENDER` is now `MAIL_DEFAULT_SENDER`
+   - `DEFAULT_MAX_EMAILS` is now `MAIL_MAX_EMAILS`
+   - `MAIL_FAIL_SILENTLY` is no longer used
+   - `MAIL_SUPPRESS_SEND` now defaults to `TESTING` setting value.
 - General API clean as things were happening in a few different places
 
 
