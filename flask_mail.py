@@ -191,7 +191,7 @@ class Connection(object):
                                message.mail_options,
                                message.rcpt_options)
 
-        email_dispatched.send(message, app=current_app._get_current_object())
+        email_dispatched.send(current_app._get_current_object(), message = message)
 
         self.num_emails += 1
 
