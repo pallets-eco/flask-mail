@@ -278,12 +278,12 @@ Flask-Mail provides signalling support through a {data}`.email_dispatched`
 signal. This is sent whenever an email is dispatched (even if the email is not
 actually sent, i.e. in a testing environment).
 
-A function connecting to the {data}`.email_dispatched` signal takes a
-{class}`.Message` instance as a first argument, and the Flask app instance as an
-optional argument:
+A function connecting to the {data}`.email_dispatched` signal is sent with the
+{class}`~flask.Flask` instance as the first argument, and the {class}`.Message}`
+instance as the `message` argument.
 
 ```py
-def log_message(message, app):
+def log_message(app, message):
     app.logger.debug(message.subject)
 
 email_dispatched.connect(log_message)

@@ -162,7 +162,7 @@ class Connection:
                 message.rcpt_options,
             )
 
-        email_dispatched.send(message, app=current_app._get_current_object())
+        email_dispatched.send(current_app._get_current_object(), message=message)
 
         self.num_emails += 1
 
@@ -456,24 +456,15 @@ class _MailMixin:
                 assert len(outbox) == 1
                 assert outbox[0].subject == "testing"
 
-        You must have blinker installed in order to use this feature.
         :versionadded: 0.4
         """
-
-        if not email_dispatched:
-            raise RuntimeError("blinker must be installed")
-
         outbox = []
 
-        def _record(message, app):
+        def record(app, message):
             outbox.append(message)
 
-        email_dispatched.connect(_record)
-
-        try:
+        with email_dispatched.connected_to(record):
             yield outbox
-        finally:
-            email_dispatched.disconnect(_record)
 
     def send(self, message):
         """Sends a single message instance. If TESTING is True the message will

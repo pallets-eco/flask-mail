@@ -10,6 +10,8 @@ Unreleased
     `importlib.metadata.version("flask-mail")` instead.
 -   Indicate that the deprecated `is_bad_headers` will be removed in the next
     version.
+-   Fix the `email_dispatched` signal to pass the current app as the sender and
+    `message` as an argument, rather than the other way around.
 
 
 ## Version 0.9.1
