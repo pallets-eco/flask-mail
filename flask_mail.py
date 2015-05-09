@@ -225,15 +225,17 @@ class Attachment(object):
     :param content_type: file mimetype
     :param data: the raw file data
     :param disposition: content-disposition (if any)
+    :param cidname: if it is CID attachment, set this name
     """
 
     def __init__(self, filename=None, content_type=None, data=None,
-                 disposition=None, headers=None):
+                 disposition=None, headers=None, cidname=None):
         self.filename = filename
         self.content_type = content_type
         self.data = data
         self.disposition = disposition or 'attachment'
         self.headers = headers or {}
+        self.cidname = cidname
 
 
 class Message(object):
@@ -364,24 +366,26 @@ class Message(object):
             f = MIMEBase(*attachment.content_type.split('/'))
             f.set_payload(attachment.data)
             encode_base64(f)
+            if attachment.cidname:
+                f.add_header("Content-ID", attachment.cidname)
+            else:
+                filename = attachment.filename
+                if filename and ascii_attachments:
+                    # force filename to ascii
+                    filename = unicodedata.normalize('NFKD', filename)
+                    filename = filename.encode('ascii', 'ignore').decode('ascii')
+                    filename = SPACES.sub(u' ', filename).strip()
 
-            filename = attachment.filename
-            if filename and ascii_attachments:
-                # force filename to ascii
-                filename = unicodedata.normalize('NFKD', filename)
-                filename = filename.encode('ascii', 'ignore').decode('ascii')
-                filename = SPACES.sub(u' ', filename).strip()
+                try:
+                    filename and filename.encode('ascii')
+                except UnicodeEncodeError:
+                    if not PY3:
+                        filename = filename.encode('utf8')
+                    filename = ('UTF8', '', filename)
 
-            try:
-                filename and filename.encode('ascii')
-            except UnicodeEncodeError:
-                if not PY3:
-                    filename = filename.encode('utf8')
-                filename = ('UTF8', '', filename)
-
-            f.add_header('Content-Disposition',
-                         attachment.disposition,
-                         filename=filename)
+                f.add_header('Content-Disposition',
+                             attachment.disposition,
+                             filename=filename)
 
             for key, value in attachment.headers.items():
                 f.add_header(key, value)
