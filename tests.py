@@ -369,8 +369,8 @@ class TestMessage(TestCase):
         self.assertEqual(len(body.get_payload()), 2)
 
         plain, html = body.get_payload()
-        self.assertEqual(plain.get_payload(), plain_text)
-        self.assertEqual(html.get_payload(), html_text)
+        self.assertEqual(base64.b64decode(plain.get_payload()), plain_text)
+        self.assertEqual(base64.b64decode(html.get_payload()), html_text)
         self.assertEqual(base64.b64decode(attachment.get_payload()), b'this is a test')
 
     def test_date_header(self):
