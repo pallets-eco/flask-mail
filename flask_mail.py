@@ -45,7 +45,7 @@ else:
     text_type = unicode
     message_policy = None
 
-charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
+charset.add_charset('utf-8', charset.SHORTEST, charset.BASE64, 'utf-8')
 
 
 class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
