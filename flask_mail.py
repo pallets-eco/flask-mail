@@ -99,10 +99,14 @@ def sanitize_subject(subject, encoding='utf-8'):
             subject = Header(subject, 'utf-8').encode()
     return subject
 
-def sanitize_address(addr, encoding='utf-8'):
+def sanitize_address(addr, encoding='utf-8', catch_all=None):
     if isinstance(addr, string_types):
         addr = parseaddr(force_text(addr))
     nm, addr = addr
+
+    if catch_all:
+        nm = '{0} ({1})'.format(nm, addr) if nm else addr
+        addr = catch_all
 
     try:
         nm = Header(nm, encoding).encode()
@@ -121,8 +125,8 @@ def sanitize_address(addr, encoding='utf-8'):
     return formataddr((nm, addr))
 
 
-def sanitize_addresses(addresses, encoding='utf-8'):
-    return map(lambda e: sanitize_address(e, encoding), addresses)
+def sanitize_addresses(addresses, encoding='utf-8', catch_all=None):
+    return map(lambda e: sanitize_address(e, encoding, catch_all), addresses)
 
 
 def _has_newline(line):
@@ -184,9 +188,13 @@ class Connection(object):
         if message.date is None:
             message.date = time.time()
 
+
+        catch_all = current_app.extensions['mail'].catch_all
+
         if self.host:
             self.host.sendmail(sanitize_address(envelope_from or message.sender),
-                               list(sanitize_addresses(message.send_to)),
+                               list(sanitize_addresses(message.send_to,
+                                                       catch_all=catch_all)),
                                message.as_bytes() if PY3 else message.as_string(),
                                message.mail_options,
                                message.rcpt_options)
@@ -319,6 +327,7 @@ class Message(object):
     def _message(self):
         """Creates the email"""
         ascii_attachments = current_app.extensions['mail'].ascii_attachments
+        catch_all = current_app.extensions['mail'].catch_all
         encoding = self.charset or 'utf-8'
 
         attachments = self.attachments or []
@@ -343,14 +352,14 @@ class Message(object):
             msg['Subject'] = sanitize_subject(force_text(self.subject), encoding)
 
         msg['From'] = sanitize_address(self.sender, encoding)
-        msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
+        msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding, catch_all))))
 
         msg['Date'] = formatdate(self.date, localtime=True)
         # see RFC 5322 section 3.6.4.
         msg['Message-ID'] = self.msgId
 
         if self.cc:
-            msg['Cc'] = ', '.join(list(set(sanitize_addresses(self.cc, encoding))))
+            msg['Cc'] = ', '.join(list(set(sanitize_addresses(self.cc, encoding, catch_all))))
 
         if self.reply_to:
             msg['Reply-To'] = sanitize_address(self.reply_to, encoding)
@@ -528,7 +537,7 @@ class _MailMixin(object):
 class _Mail(_MailMixin):
     def __init__(self, server, username, password, port, use_tls, use_ssl,
                  default_sender, debug, max_emails, suppress,
-                 ascii_attachments=False):
+                 ascii_attachments=False, catch_all=None):
         self.server = server
         self.username = username
         self.password = password
@@ -540,6 +549,7 @@ class _Mail(_MailMixin):
         self.max_emails = max_emails
         self.suppress = suppress
         self.ascii_attachments = ascii_attachments
+        self.catch_all = catch_all
 
 
 class Mail(_MailMixin):
@@ -567,7 +577,8 @@ class Mail(_MailMixin):
             int(config.get('MAIL_DEBUG', debug)),
             config.get('MAIL_MAX_EMAILS'),
             config.get('MAIL_SUPPRESS_SEND', testing),
-            config.get('MAIL_ASCII_ATTACHMENTS', False)
+            config.get('MAIL_ASCII_ATTACHMENTS', False),
+            config.get('MAIL_CATCH_ALL'),
         )
 
     def init_app(self, app):

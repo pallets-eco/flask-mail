@@ -547,6 +547,17 @@ class TestMessage(TestCase):
         self.mail.send(msg)
         self.assertNotIn('Subject:', msg.as_string())
 
+    def test_sanitize_addresse_with_catch_all(self):
+        values = (
+            'recipient@test.org',
+            ('Recipient', 'recipient@test.org'),
+            'Recipient <recipient@test.org>',
+        )
+        for value in values:
+            self.assertIn(' <catch@all.mail>',
+                          sanitize_address(value, catch_all='catch@all.mail'))
+
+
 class TestMail(TestCase):
 
     def test_send(self):
@@ -573,6 +584,44 @@ class TestMail(TestCase):
             self.assertEqual(msg.recipients, ["tester@example.com"])
             self.assertEqual(msg.body, "test")
             self.assertEqual(msg.sender, self.app.extensions['mail'].default_sender)
+
+    def test_send_message_with_catch_all(self):
+        recipients = ['recipient-1@test.org',
+                      'Recipient-2 <recipient-2@test.org>',
+                      ('Recipient-3', 'recipient-3@test.org')]
+        ccs = ['cc-1@test.org',
+               'CC-2 <cc-2@test.org>',
+               ('CC-3', 'cc-3@test.org')]
+
+        # Not tested because BCCs are not serialized into headers
+        # See: https://github.com/mattupstate/flask-mail/pull/29
+        bccs = ['bcc-1@test.org',
+                'BCC-2 <bcc-2@test.org>',
+                ('BCC-3', 'bcc-3@test.org')]
+        sender = 'sender@test.com'
+        reply_to = 'reply-to@test.com'
+        catch_all = 'catch@all.mail'
+
+        with self.mail_config(catch_all=catch_all):
+            with self.mail.record_messages() as outbox:
+                self.mail.send_message(subject='testing',
+                                       sender=sender,
+                                       reply_to=reply_to,
+                                       recipients=recipients,
+                                       cc=ccs,
+                                       bcc=bccs,
+                                       body='test')
+                self.assertEqual(len(outbox), 1)
+                msg = outbox[0]
+                response = msg.as_string()
+
+        for value in recipients + ccs:
+            expected = sanitize_address(value, catch_all=catch_all)
+            self.assertIn(expected, response)
+
+        for value in (sender, reply_to):
+            not_expected = sanitize_address(value, catch_all=catch_all)
+            self.assertNotIn(not_expected, response)
 
 
 class TestConnection(TestCase):
@@ -701,3 +750,34 @@ class TestConnection(TestCase):
                     msg.mail_options,
                     msg.rcpt_options
                 )
+
+    def test_sendmail_with_catch_all(self):
+        recipients = ['recipient-1@test.org',
+                      'Recipient-2 <recipient-2@test.org>',
+                      ('Recipient-3', 'recipient-3@test.org')]
+        ccs = ['cc-1@test.org',
+               'CC-2 <cc-2@test.org>',
+               ('CC-3', 'cc-3@test.org')]
+        bccs = ['bcc-1@test.org',
+                'BCC-2 <bcc-2@test.org>',
+                ('BCC-3', 'bcc-3@test.org')]
+
+        with self.mail_config(catch_all='catch@all.mail'):
+            with self.mail.connect() as conn:
+                with mock.patch.object(conn, 'host') as host:
+                    msg = Message(subject="testing",
+                                  sender="from@example.com",
+                                  recipients=recipients,
+                                  cc=ccs, bcc=bccs,
+                                  body=u"Öö")
+
+                    conn.send(msg)
+
+                    args, kwargs = host.sendmail.call_args
+
+                    for mail in recipients + ccs + bccs:
+                        send_to = args[1]
+                        expected = sanitize_address(mail, catch_all='catch@all.mail')
+                        not_expected = sanitize_address(mail)
+                        self.assertIn(expected, send_to)
+                        self.assertNotIn(not_expected, send_to)

@@ -60,6 +60,8 @@ options (each is explained later in the documentation):
 
 * **MAIL_ASCII_ATTACHMENTS** : default **False**
 
+* **MAIL_CATCH_ALL** : default **None**
+
 In addition the standard Flask ``TESTING`` configuration option is used by **Flask-Mail**
 in unit tests (see below).
 
@@ -231,6 +233,16 @@ app instance as an optional argument::
         app.logger.debug(message.subject)
 
     email_dispatched.connect(log_message)
+
+
+Testing with a catch-all mail
+-----------------------------
+
+Flask-Mail provide a way to test without sending mails to the whole world.
+You can simply set ``MAIL_CATCH_ALL`` configuration parameter
+to a test mailbox and all outgoing mails will be sent to this single mailbox.
+The original recipients will set as display name and if it already have one,
+it will be rewritten ``Display Name (original@mail.org)``.
 
 
 API
