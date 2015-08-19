@@ -72,6 +72,12 @@ class TestCase(unittest.TestCase):
             return unittest.TestCase.assertIsNotNone(self, obj, msg)
         return self.assertTrue(obj is not None)
 
+    def assertRegexpMatches(self, text, regexp, msg=None):
+        if hasattr(unittest.TestCase, 'assertRegexpMatches'):
+            return unittest.TestCase.assertRegexpMatches(self, text, regexp, msg)
+        match = re.match(regexp, text) if isinstance(regexp, basestring) else regexp.match(text)
+        return self.assertIsNotNone(match)
+
 
 class TestInitialization(TestCase):
 
@@ -547,6 +553,17 @@ class TestMessage(TestCase):
         self.mail.send(msg)
         self.assertNotIn('Subject:', msg.as_string())
 
+    def test_sanitize_addresse_with_send_to(self):
+        values = (
+            'recipient@test.org',
+            ('Recipient', 'recipient@test.org'),
+            'Recipient <recipient@test.org>',
+        )
+        for value in values:
+            self.assertIn(' <test@test.com>',
+                          sanitize_address(value, send_to='test@test.com'))
+
+
 class TestMail(TestCase):
 
     def test_send(self):
@@ -573,6 +590,40 @@ class TestMail(TestCase):
             self.assertEqual(msg.recipients, ["tester@example.com"])
             self.assertEqual(msg.body, "test")
             self.assertEqual(msg.sender, self.app.extensions['mail'].default_sender)
+
+    def test_send_all_messages_to(self):
+        recipients = ['recipient-1@test.org',
+                      'Recipient-2 <recipient-2@test.org>',
+                      ('Recipient-3', 'recipient-3@test.org')]
+        ccs = ['cc-1@test.org',
+               'CC-2 <cc-2@test.org>',
+               ('CC-3', 'cc-3@test.org')]
+
+        # Skipped because BCC are not serialized into headers
+        # See: https://github.com/mattupstate/flask-mail/pull/29
+        bccs = ['bcc-1@test.org',
+                'BCC-2 <bcc-2@test.org>',
+                ('BCC-3', 'bcc-3@test.org')]
+        with self.mail_config(send_all_to='test@test.com'):
+            with self.mail.record_messages() as outbox:
+                self.mail.send_message(subject='testing',
+                                       sender='sender@test.com',
+                                       reply_to='reply-to@test.com',
+                                       recipients=recipients,
+                                       cc=ccs,
+                                       bcc=bccs,
+                                       body='test')
+                self.assertEqual(len(outbox), 1)
+                msg = outbox[0]
+                response = msg.as_string()
+
+        for value in recipients + ccs:
+            expected = sanitize_address(value, send_to='test@test.com')
+            self.assertIn(expected, response)
+
+        for value in ('sender@test.com', 'reply-to@test.com'):
+            not_expected = sanitize_address(value, send_to='test@test.com')
+            self.assertNotIn(not_expected, response)
 
 
 class TestConnection(TestCase):
@@ -701,3 +752,34 @@ class TestConnection(TestCase):
                     msg.mail_options,
                     msg.rcpt_options
                 )
+
+    def test_send_all_messages_to(self):
+        recipients = ['recipient-1@test.org',
+                      'Recipient-2 <recipient-2@test.org>',
+                      ('Recipient-3', 'recipient-3@test.org')]
+        ccs = ['cc-1@test.org',
+               'CC-2 <cc-2@test.org>',
+               ('CC-3', 'cc-3@test.org')]
+        bccs = ['bcc-1@test.org',
+                'BCC-2 <bcc-2@test.org>',
+                ('BCC-3', 'bcc-3@test.org')]
+
+        with self.mail_config(send_all_to='test@test.com'):
+            with self.mail.connect() as conn:
+                with mock.patch.object(conn, 'host') as host:
+                    msg = Message(subject="testing",
+                                  sender="from@example.com",
+                                  recipients=recipients,
+                                  cc=ccs, bcc=bccs,
+                                  body=u"Öö")
+
+                    conn.send(msg)
+
+                    args, kwargs = host.sendmail.call_args
+
+                    for mail in recipients + ccs + bccs:
+                        send_to = args[1]
+                        expected = sanitize_address(mail, send_to='test@test.com')
+                        not_expected = sanitize_address(mail)
+                        self.assertIn(expected, send_to)
+                        self.assertNotIn(not_expected, send_to[1])
