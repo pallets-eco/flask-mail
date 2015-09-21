@@ -352,6 +352,9 @@ class Message(object):
         if self.cc:
             msg['Cc'] = ', '.join(list(set(sanitize_addresses(self.cc, encoding))))
 
+        if self.bcc:
+            msg['Bcc'] = ', '.join(list(set(sanitize_addresses(self.bcc, encoding))))
+
         if self.reply_to:
             msg['Reply-To'] = sanitize_address(self.reply_to, encoding)
 
