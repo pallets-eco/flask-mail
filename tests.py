@@ -14,7 +14,8 @@ from email.header import Header
 from email import charset
 
 from flask import Flask
-from flask_mail import Mail, Message, BadHeaderError, sanitize_address, PY3
+from flask_mail import Mail, Message, BadHeaderError, sanitize_address, PY3, \
+    fix_recipients_list
 from speaklater import make_lazy_string
 
 
@@ -99,6 +100,11 @@ class TestMessage(TestCase):
         msg2 = Message(subject="subject")
         msg2.add_recipient("somebody@here.com")
         self.assertEqual(len(msg2.recipients), 1)
+
+    def test_fix_recipients_list(self):
+        msg = Message(subject="test")
+        msg.recipients = [["Test", "to@example.com"]]
+        assert msg.recipients[0] == ("Test", "to@example.com")
 
     def test_esmtp_options_properly_initialized(self):
         msg = Message(subject="subject")

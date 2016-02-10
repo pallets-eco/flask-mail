@@ -125,6 +125,17 @@ def sanitize_addresses(addresses, encoding='utf-8'):
     return map(lambda e: sanitize_address(e, encoding), addresses)
 
 
+def fix_recipients_list(recipients):
+    fixed_recipients = []
+    for recipient in recipients:
+        if not isinstance(recipient, string_types):
+            # Ensure that the name/email values are a tuple and not a list
+            fixed_recipients.append(tuple(recipient))
+        else:
+            fixed_recipients.append(recipient)
+    return fixed_recipients
+
+
 def _has_newline(line):
     """Used by has_bad_header to check for \\r or \\n"""
     if line and ('\r' in line or '\n' in line):
@@ -293,6 +304,30 @@ class Message(object):
         self.mail_options = mail_options or []
         self.rcpt_options = rcpt_options or []
         self.attachments = attachments or []
+
+    @property
+    def recipients(self):
+        return self._recipients
+
+    @recipients.setter
+    def recipients(self, recipients):
+        self._recipients = fix_recipients_list(recipients)
+
+    @property
+    def cc(self):
+        return self._cc
+
+    @cc.setter
+    def cc(self, recipients):
+        self._cc = fix_recipients_list(recipients)
+
+    @property
+    def bcc(self):
+        return self._bcc
+
+    @bcc.setter
+    def bcc(self, recipients):
+        self._bcc = fix_recipients_list(recipients)
 
     @property
     def send_to(self):
