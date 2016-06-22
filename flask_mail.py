@@ -275,7 +275,7 @@ class Message(object):
         sender = sender or current_app.extensions['mail'].default_sender
 
         if isinstance(sender, tuple):
-            sender = "%s <%s>" % sender
+            sender = formataddr(sender)
 
         self.recipients = recipients or []
         self.subject = subject
