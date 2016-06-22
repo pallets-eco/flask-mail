@@ -397,6 +397,13 @@ class TestMessage(TestCase):
         self.assertIsNotNone(r)
         self.assertIn('Message-ID: ' + msg.msgId, msg.as_string())
 
+    def test_comma_sender_tuple(self):
+        msg = Message(subject="subject",
+                      sender=("Foo, Bar", 'from@example.com'),
+                      recipients=["to@example.com"])
+
+        self.assertIn('From: "Foo, Bar" <from@example.com>', msg.as_string())
+
     def test_unicode_sender_tuple(self):
         msg = Message(subject="subject",
                       sender=(u"ÄÜÖ → ✓", 'from@example.com>'),
