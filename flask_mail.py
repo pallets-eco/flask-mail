@@ -564,7 +564,7 @@ class Mail(_MailMixin):
             config.get('MAIL_USE_TLS', False),
             config.get('MAIL_USE_SSL', False),
             config.get('MAIL_DEFAULT_SENDER'),
-            int(config.get('MAIL_DEBUG', debug)),
+            config.get('MAIL_DEBUG', debug),
             config.get('MAIL_MAX_EMAILS'),
             config.get('MAIL_SUPPRESS_SEND', testing),
             config.get('MAIL_ASCII_ATTACHMENTS', False)
