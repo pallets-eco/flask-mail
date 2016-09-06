@@ -133,9 +133,9 @@ class Connection(object):
 
     def configure_host(self):
         if self.mail.use_ssl:
-            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
+            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port, local_hostname=self.mail.local_hostname)
         else:
-            host = smtplib.SMTP(self.mail.server, self.mail.port)
+            host = smtplib.SMTP(self.mail.server, self.mail.port, local_hostname=self.mail.local_hostname)
 
         host.set_debuglevel(int(self.mail.debug))
 
@@ -462,7 +462,7 @@ class _MailMixin(object):
 
 class _Mail(_MailMixin):
     def __init__(self, server, username, password, port, use_tls, use_ssl,
-                 default_sender, debug, max_emails, suppress):
+                 default_sender, debug, max_emails, suppress, local_hostname):
         self.server = server
         self.username = username
         self.password = password
@@ -474,6 +474,7 @@ class _Mail(_MailMixin):
         self.max_emails = max_emails
         self.suppress = suppress
         self.xoauth2_token = '' # Must be set manually
+        self.local_hostname = local_hostname
 
 
 class Mail(_MailMixin):
@@ -508,7 +509,8 @@ class Mail(_MailMixin):
             app.config.get('MAIL_DEFAULT_SENDER'),
             int(app.config.get('MAIL_DEBUG', app.debug)),
             app.config.get('MAIL_MAX_EMAILS'),
-            app.config.get('MAIL_SUPPRESS_SEND', app.testing))
+            app.config.get('MAIL_SUPPRESS_SEND', app.testing),
+            app.config.get('MAIL_LOCAL_HOSTNAME'))
 
         # register extension with app
         app.extensions = getattr(app, 'extensions', {})
