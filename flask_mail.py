@@ -160,7 +160,10 @@ class Connection(object):
         host.set_debuglevel(int(self.mail.debug))
 
         if self.mail.use_tls:
-            host.starttls()
+            (resp, reply) = host.starttls()
+            # Fix CVE-2016-0772 on old Python installations
+            if resp != 200:
+                raise smtplib.SMTPResponseException(resp, reply)
         if self.mail.username and self.mail.password:
             host.login(self.mail.username, self.mail.password)
 

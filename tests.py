@@ -8,13 +8,14 @@ import unittest
 import time
 import re
 import mock
+import smtplib
 from contextlib import contextmanager
 
 from email.header import Header
 from email import charset
 
 from flask import Flask
-from flask_mail import Mail, Message, BadHeaderError, sanitize_address, PY3
+from flask_mail import Mail, Message, BadHeaderError, sanitize_address, PY3, Connection
 from speaklater import make_lazy_string
 
 
@@ -701,3 +702,11 @@ class TestConnection(TestCase):
                     msg.mail_options,
                     msg.rcpt_options
                 )
+
+    def test_configure_host_tls_failure(self):
+        with mock.patch('flask_mail.smtplib.SMTP') as MockSMTP:
+            mock_host = MockSMTP.return_value
+            mock_host.starttls.return_value = (501, "Syntax error (testing)")
+            with mock.patch.object(self.mail, "use_tls", True):
+                self.assertTrue(self.mail.use_tls)
+                self.assertRaises(smtplib.SMTPResponseException, Connection(self.mail).configure_host)
