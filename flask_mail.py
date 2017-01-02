@@ -236,7 +236,8 @@ class Message(object):
     :param charset: message character set
     :param extra_headers: A dictionary of additional headers for the message
     :param mail_options: A list of ESMTP options to be used in MAIL FROM command
-    :param rcpt_options:  A list of ESMTP options to be used in RCPT commands
+    :param rcpt_options: A list of ESMTP options to be used in RCPT commands
+    :param msgId: Email message ID
     """
 
     def __init__(self, subject=None,
@@ -252,7 +253,8 @@ class Message(object):
                  charset=None,
                  extra_headers=None,
                  mail_options=None,
-                 rcpt_options=None):
+                 rcpt_options=None,
+                 message_id=None):
 
         sender = sender
 
@@ -268,12 +270,16 @@ class Message(object):
         self.body = body
         self.html = html
         self.date = date
-        self.msgId = make_msgid()
         self.charset = charset
         self.extra_headers = extra_headers
         self.mail_options = mail_options or []
         self.rcpt_options = rcpt_options or []
         self.attachments = attachments or []
+
+        if message_id:
+            self.msgId = message_id
+        else:
+            self.msgId = make_msgid()
 
     @property
     def send_to(self):
