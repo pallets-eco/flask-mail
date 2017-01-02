@@ -237,7 +237,7 @@ class Message(object):
     :param extra_headers: A dictionary of additional headers for the message
     :param mail_options: A list of ESMTP options to be used in MAIL FROM command
     :param rcpt_options: A list of ESMTP options to be used in RCPT commands
-    :param msgId: Email message ID
+    :param message_id: Email message ID
     """
 
     def __init__(self, subject=None,
