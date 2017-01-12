@@ -129,7 +129,10 @@ class Connection(object):
 
     def __exit__(self, exc_type, exc_value, tb):
         if self.host:
-            self.host.quit()
+            try:
+                self.host.quit()
+            except smtplib.SMTPServerDisconnected:
+                pass
 
     def configure_host(self):
         if self.mail.use_ssl:
@@ -182,7 +185,10 @@ class Connection(object):
         if self.num_emails == self.mail.max_emails:
             self.num_emails = 0
             if self.host:
-                self.host.quit()
+                try:
+                    self.host.quit()
+                except smtplib.SMTPServerDisconnected:
+                    pass
                 self.host = self.configure_host()
 
     def send_message(self, *args, **kwargs):
