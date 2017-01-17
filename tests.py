@@ -85,6 +85,11 @@ class TestInitialization(TestCase):
         self.assertEquals(self.mail.state.__dict__, mail.__dict__)
 
 
+    def test_init_with_timeout(self):
+        with self.mail_config(timeout=5):
+            self.assertEquals(self.mail.timeout, 5)
+
+
 class TestMessage(TestCase):
 
     def test_initialize(self):
@@ -546,6 +551,7 @@ class TestMessage(TestCase):
         msg.body = "normal ascii text"
         self.mail.send(msg)
         self.assertNotIn('Subject:', msg.as_string())
+
 
 class TestMail(TestCase):
 

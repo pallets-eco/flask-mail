@@ -153,9 +153,11 @@ class Connection(object):
 
     def configure_host(self):
         if self.mail.use_ssl:
-            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
+            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port,
+                                    timeout=self.mail.timeout)
         else:
-            host = smtplib.SMTP(self.mail.server, self.mail.port)
+            host = smtplib.SMTP(self.mail.server, self.mail.port,
+                                timeout=self.mail.timeout)
 
         host.set_debuglevel(int(self.mail.debug))
 
@@ -528,7 +530,8 @@ class _MailMixin(object):
 class _Mail(_MailMixin):
     def __init__(self, server, username, password, port, use_tls, use_ssl,
                  default_sender, debug, max_emails, suppress,
-                 ascii_attachments=False):
+                 ascii_attachments=False,
+                 timeout=smtplib.socket._GLOBAL_DEFAULT_TIMEOUT):
         self.server = server
         self.username = username
         self.password = password
@@ -540,6 +543,7 @@ class _Mail(_MailMixin):
         self.max_emails = max_emails
         self.suppress = suppress
         self.ascii_attachments = ascii_attachments
+        self.timeout = timeout
 
 
 class Mail(_MailMixin):
@@ -567,7 +571,8 @@ class Mail(_MailMixin):
             int(config.get('MAIL_DEBUG', debug)),
             config.get('MAIL_MAX_EMAILS'),
             config.get('MAIL_SUPPRESS_SEND', testing),
-            config.get('MAIL_ASCII_ATTACHMENTS', False)
+            config.get('MAIL_ASCII_ATTACHMENTS', False),
+            config.get('MAIL_TIMEOUT', smtplib.socket._GLOBAL_DEFAULT_TIMEOUT)
         )
 
     def init_app(self, app):
