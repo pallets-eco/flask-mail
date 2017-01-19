@@ -62,8 +62,6 @@ def force_text(s, encoding='utf-8', errors='strict'):
     """
     Similar to smart_text, except that lazy instances are resolved to
     strings, rather than kept as lazy objects.
-
-    If strings_only is True, don't convert (some) non-string-like objects.
     """
     if isinstance(s, text_type):
         return s
@@ -85,9 +83,9 @@ def force_text(s, encoding='utf-8', errors='strict'):
         if not isinstance(s, Exception):
             raise FlaskMailUnicodeDecodeError(s, *e.args)
         else:
-            s = ' '.join([force_text(arg, encoding, strings_only,
-                    errors) for arg in s])
+            s = ' '.join([force_text(arg, encoding, errors) for arg in s])
     return s
+
 
 def sanitize_subject(subject, encoding='utf-8'):
     try:
@@ -98,6 +96,7 @@ def sanitize_subject(subject, encoding='utf-8'):
         except UnicodeEncodeError:
             subject = Header(subject, 'utf-8').encode()
     return subject
+
 
 def sanitize_address(addr, encoding='utf-8'):
     if isinstance(addr, string_types):
@@ -130,6 +129,7 @@ def _has_newline(line):
     if line and ('\r' in line or '\n' in line):
         return True
     return False
+
 
 class Connection(object):
     """Handles connection to host."""
@@ -175,8 +175,8 @@ class Connection(object):
         assert message.send_to, "No recipients have been added"
 
         assert message.sender, (
-                "The message does not specify a sender and a default sender "
-                "has not been configured")
+            "The message does not specify a sender and a default sender "
+            "has not been configured")
 
         if message.has_bad_headers():
             raise BadHeaderError
