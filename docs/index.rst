@@ -86,6 +86,11 @@ In this case emails will be sent using the configuration values from Flask's ``c
 context global. This is useful if you have multiple applications running in the same
 process but with different configuration options.
 
+.. admonition:: Load email configuration
+
+   Notice that Flask-Mail needs the configuration parameters to create a mail handler, so you have to make
+   sure to load your configuration **before** the initialization of Flask-Mail (either use ``Mail`` class 
+   constructor or ``init_app`` method).
 
 Sending messages
 ----------------
