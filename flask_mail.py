@@ -277,7 +277,7 @@ class Message(object):
         if isinstance(sender, tuple):
             sender = "%s <%s>" % sender
 
-        self.recipients = recipients or []
+        self.recipients = [r for r in recipients if r is not None] or []
         self.subject = subject
         self.sender = sender
         self.reply_to = reply_to
