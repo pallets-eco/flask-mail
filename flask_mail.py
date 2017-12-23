@@ -156,7 +156,8 @@ class Connection(object):
             host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
         else:
             host = smtplib.SMTP(self.mail.server, self.mail.port)
-
+        
+        host.ehlo_or_helo_if_needed()
         host.set_debuglevel(int(self.mail.debug))
 
         if self.mail.use_tls:
