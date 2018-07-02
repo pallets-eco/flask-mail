@@ -152,15 +152,22 @@ class Connection(object):
             self.host.quit()
 
     def configure_host(self):
+        client_cert = None
+        client_key = None
+
+        if self.mail.client_cert and self.mail.client_key:
+            client_cert = self.mail.client_cert
+            client_key = self.mail.client_key
+
         if self.mail.use_ssl:
-            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
+            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port, certfile=client_cert, keyfile=client_key)
         else:
             host = smtplib.SMTP(self.mail.server, self.mail.port)
 
         host.set_debuglevel(int(self.mail.debug))
 
         if self.mail.use_tls:
-            host.starttls()
+            host.starttls(certfile=client_cert, keyfile=client_key)
         if self.mail.username and self.mail.password:
             host.login(self.mail.username, self.mail.password)
 
@@ -527,14 +534,16 @@ class _MailMixin(object):
 
 class _Mail(_MailMixin):
     def __init__(self, server, username, password, port, use_tls, use_ssl,
-                 default_sender, debug, max_emails, suppress,
-                 ascii_attachments=False):
+                 client_cert, client_key, default_sender, debug, max_emails, 
+                 suppress, ascii_attachments=False):
         self.server = server
         self.username = username
         self.password = password
         self.port = port
         self.use_tls = use_tls
         self.use_ssl = use_ssl
+        self.client_cert = client_cert
+        self.client_key = client_key
         self.default_sender = default_sender
         self.debug = debug
         self.max_emails = max_emails
@@ -563,6 +572,8 @@ class Mail(_MailMixin):
             config.get('MAIL_PORT', 25),
             config.get('MAIL_USE_TLS', False),
             config.get('MAIL_USE_SSL', False),
+            config.get('MAIL_CLIENT_CERT'),
+            config.get('MAIL_CLIENT_KEY'),
             config.get('MAIL_DEFAULT_SENDER'),
             int(config.get('MAIL_DEBUG', debug)),
             config.get('MAIL_MAX_EMAILS'),

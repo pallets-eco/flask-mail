@@ -46,6 +46,10 @@ options (each is explained later in the documentation):
 
 * **MAIL_USE_SSL** : default **False**
 
+* **MAIL_CLIENT_CERT** : default **None**
+
+* **MAIL_CLIENT_KEY** : default **None**
+
 * **MAIL_DEBUG** : default **app.debug**
 
 * **MAIL_USERNAME** : default **None**
@@ -173,6 +177,16 @@ should be fine for any unicode character that can be decomposed by NFKD into one
 or more ASCII characters. If you need romanization/transliteration (i.e `ß` →
 `ss`) then your application should do it and pass a proper ASCII string.
 
+Client certificate authentication
+---------------------------------
+
+In some situations it may be desirable for the mail sender to present a client TLS
+certificate to the mail relay, for an extra layer of authentication beyond that provided
+by a username and password. In this case, you should set the configuration variables
+``MAIL_CLIENT_CERT`` and ``MAIL_CLIENT_KEY`` to the paths to your certificate and private
+key, respectively, which will then be loaded when establishing a TLS connection (i.e. when
+the ``MAIL_USE_TLS`` or ``MAIL_USE_SSL`` variables are set to **True**) with the mail
+relay.
 
 Unit tests and suppressing emails
 ---------------------------------
