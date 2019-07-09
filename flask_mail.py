@@ -153,9 +153,9 @@ class Connection(object):
 
     def configure_host(self):
         if self.mail.use_ssl:
-            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
+            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port, local_hostname=self.mail.local_hostname)
         else:
-            host = smtplib.SMTP(self.mail.server, self.mail.port)
+            host = smtplib.SMTP(self.mail.server, self.mail.port, local_hostname=self.mail.local_hostname)
 
         host.set_debuglevel(int(self.mail.debug))
 
@@ -526,12 +526,13 @@ class _MailMixin(object):
 
 
 class _Mail(_MailMixin):
-    def __init__(self, server, username, password, port, use_tls, use_ssl,
+    def __init__(self, server, username, password, local_hostname, port, use_tls, use_ssl,
                  default_sender, debug, max_emails, suppress,
                  ascii_attachments=False):
         self.server = server
         self.username = username
         self.password = password
+        self.local_hostname = local_hostname
         self.port = port
         self.use_tls = use_tls
         self.use_ssl = use_ssl
@@ -560,6 +561,7 @@ class Mail(_MailMixin):
             config.get('MAIL_SERVER', '127.0.0.1'),
             config.get('MAIL_USERNAME'),
             config.get('MAIL_PASSWORD'),
+            config.get('MAIL_DOMAIN'),
             config.get('MAIL_PORT', 25),
             config.get('MAIL_USE_TLS', False),
             config.get('MAIL_USE_SSL', False),
