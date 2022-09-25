@@ -522,7 +522,7 @@ class _MailMixin(object):
         try:
             return Connection(app.extensions['mail'])
         except KeyError:
-            raise RuntimeError("The curent application was not configured with Flask-Mail")
+            raise RuntimeError("The current application was not configured with Flask-Mail")
 
 
 class _Mail(_MailMixin):
