@@ -759,3 +759,14 @@ class TestAsBytesAsString(TestCase):
         self.assertEqual(message.as_string(), message.as_string())
         self.assertEqual(message.as_string(), message.as_string())
         self.assertEqual(message.as_bytes(), message.as_bytes())
+
+    def test_idempotence_html(self):
+
+        message = Message(subject=PLAIN_SUBJECT,
+                          recipients=[MAILBOX1],
+                          html=SIMPLE_HTML)
+
+        self.assertEqual(message.as_bytes(), message.as_bytes())
+        self.assertEqual(message.as_string(), message.as_string())
+        self.assertEqual(message.as_string(), message.as_string())
+        self.assertEqual(message.as_bytes(), message.as_bytes())
