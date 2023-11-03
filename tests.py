@@ -18,6 +18,34 @@ from flask_mail import Mail, Message, BadHeaderError, sanitize_address, PY3
 from speaklater import make_lazy_string
 
 
+MAILBOX1 = "example@example.org"
+MAILBOX2 = "example@example.com"
+PLAIN_SUBJECT = "Test email subject"
+
+
+SIMPLE_HTML = """
+<html>
+    <body>
+        <p>Hi!</p>
+        <p>Here is the first paragraph.</p>
+        <p>And here is the second one.</p>
+        <p>Bye!</p>
+    </body>
+</html>
+"""
+
+
+PLAIN_TEXT = """
+From off a hill whose concave womb reworded
+A plaintful story from a sistering vale,
+My spirits to attend this double voice accorded,
+And down I laid to list the sad-tuned tale;
+Ere long espied a fickle maid full pale,
+Tearing of papers, breaking rings a-twain,
+Storming her world with sorrow's wind and rain.
+"""
+
+
 class TestCase(unittest.TestCase):
 
     TESTING = True
@@ -547,6 +575,7 @@ class TestMessage(TestCase):
         self.mail.send(msg)
         self.assertNotIn('Subject:', msg.as_string())
 
+
 class TestMail(TestCase):
 
     def test_send(self):
@@ -701,3 +730,32 @@ class TestConnection(TestCase):
                     msg.mail_options,
                     msg.rcpt_options
                 )
+
+
+class TestAsBytesAsString(TestCase):
+
+    def test_compare_sent_and_received_plain_text(self):
+
+        with self.mail.record_messages() as inbox:
+
+            message_sent = Message(subject=PLAIN_SUBJECT,
+                                   recipients=[MAILBOX1],
+                                   body=PLAIN_TEXT)
+
+            self.mail.send(message_sent)
+
+            message_received = inbox[0]
+
+            self.assertEqual(message_sent.as_bytes(), message_received.as_bytes())
+            self.assertEqual(message_sent.as_string(), message_received.as_string())
+
+    def test_idempotence_plain_text(self):
+
+        message = Message(subject=PLAIN_SUBJECT,
+                          recipients=[MAILBOX1],
+                          body=PLAIN_TEXT)
+
+        self.assertEqual(message.as_bytes(), message.as_bytes())
+        self.assertEqual(message.as_string(), message.as_string())
+        self.assertEqual(message.as_string(), message.as_string())
+        self.assertEqual(message.as_bytes(), message.as_bytes())
