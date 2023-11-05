@@ -294,6 +294,13 @@ class Message(object):
         self.rcpt_options = rcpt_options or []
         self.attachments = attachments or []
 
+        # There is not much use of generating these values pre-emptively.
+        # Boundaries are dependent on message payload and are to be generated during
+        # flattening of the correspondent mime payload and its children.
+        # And only then we update these attributes
+        self._outer_boundary = None
+        self._inner_boundary = None
+
     @property
     def send_to(self):
         return set(self.recipients) | set(self.bcc or ()) | set(self.cc or ())
@@ -328,12 +335,12 @@ class Message(object):
             msg = self._mimetext(self.body)
         elif len(attachments) > 0 and not self.alts:
             # No html and at least one attachment means multipart
-            msg = MIMEMultipart()
+            msg = MIMEMultipart(boundary=self._outer_boundary)
             msg.attach(self._mimetext(self.body))
         else:
             # Anything else
-            msg = MIMEMultipart()
-            alternative = MIMEMultipart('alternative')
+            msg = MIMEMultipart(boundary=self._outer_boundary)
+            alternative = MIMEMultipart('alternative', boundary=self._inner_boundary)
             alternative.attach(self._mimetext(self.body, 'plain'))
             for mimetype, content in self.alts.items():
                 alternative.attach(self._mimetext(content, mimetype))
@@ -392,14 +399,52 @@ class Message(object):
 
         return msg
 
+    def _update_boundaries(self, email_message):
+        """
+        Populates inner_boundary and outer_boundary attributes based on
+        the provided instance of a descendant of email.Message class.
+
+        To be called after the message is flattened. So that boundaries are generated and
+        validated against not messing with the content.
+
+        Following the construction of mime-tree in _message():
+        For trivial case with the only MIMEText in payload, both boundaries will be reset to Nones.
+        For the case with body and attachments, the only outer boundary will be updated.
+        For the last case, the outer boundary will be updated and the inner boundary will be brought
+        from the payload, which is expected to be also MIMEMultipart (alternative)
+        """
+
+        self._outer_boundary = email_message.get_boundary(None)
+
+        try:
+            self._inner_boundary = email_message.get_payload(0).get_boundary(None)
+        except (IndexError, TypeError, AttributeError):
+            self._inner_boundary = None
+
     def as_string(self):
-        return self._message().as_string()
+        message = self._message()
+
+        # also causes boundaries to be generated or updated
+        result = message.as_string()
+
+        # reflect the state of the temporary object
+        self._update_boundaries(message)
+
+        return result
 
     def as_bytes(self):
+        message = self._message()
+
         if PY34:
-            return self._message().as_bytes()
-        else: # fallback for old Python (3) versions
-            return self._message().as_string().encode(self.charset or 'utf-8')
+            result = message.as_bytes()
+        else:  # fallback for old Python (3) versions
+            result = message.as_string().encode(self.charset or 'utf-8')
+
+        # message is indirectly flattened by calling to_string() or to_bytes()
+        # so the boundaries are generated or updated and could be reflected in class attributes
+        self._update_boundaries(message)
+
+        return result
 
     def __str__(self):
         return self.as_string()
