@@ -1,5 +1,46 @@
+[project]
+name = "Flask-Mail"
+version = "0.9.1"
+description = "Flask extension for sending email"
+readme = "README.md"
+authors = [{ name = "Dan Jacob" }]
+maintainers = [{ name = "Pallets Ecosystem", email = "contact@palletsprojects.com" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "flask",
+    "blinker",
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+
+[project.urls]
+Documentation = "https://flask-mail.readthedocs.io"
+Changes = "https://flask-mail.readthedocs.io/en/latest/changes/"
+Source = "https://github.com/pallets-eco/flask-mail/"
+Chat = "https://discord.gg/pallets"
+
+[build-system]
+requires = ["flit_core<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.module]
+name = "flask_mail"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error"]
+
 [tool.ruff]
-src = ["flask_mail.py"]
+src = ["src"]
 fix = true
 show-fixes = true
 output-format = "full"

@@ -8,11 +8,12 @@ from email.header import Header
 from unittest import mock
 
 from flask import Flask
+from speaklater import make_lazy_string
+
 from flask_mail import BadHeaderError
 from flask_mail import Mail
 from flask_mail import Message
 from flask_mail import sanitize_address
-from speaklater import make_lazy_string
 
 
 class TestCase(unittest.TestCase):
