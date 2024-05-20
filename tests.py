@@ -11,7 +11,6 @@ from flask import Flask
 from flask_mail import BadHeaderError
 from flask_mail import Mail
 from flask_mail import Message
-from flask_mail import PY3
 from flask_mail import sanitize_address
 from speaklater import make_lazy_string
 
@@ -136,7 +135,9 @@ class TestMessage(TestCase):
         )
         response = msg.as_string()
 
-        h = Header("Reply-To: %s" % sanitize_address("somebody <somebody@example.com>"))
+        h = Header(
+            "Reply-To: {}".format(sanitize_address("somebody <somebody@example.com>"))
+        )
         self.assertIn(h.encode(), str(response))
 
     def test_send_without_sender(self):
@@ -326,8 +327,8 @@ class TestMessage(TestCase):
         self.assertIn(
             re.sub(r"\s+", " ", parsed.get_payload()[1].get("Content-Disposition")),
             [
-                "attachment; filename*=\"UTF8''%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt\"",
-                "attachment; filename*=UTF8''%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt",
+                "attachment; filename*=\"UTF8''%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt\"",  # noqa: E501
+                "attachment; filename*=UTF8''%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt",  # noqa: E501
             ],
         )
 
@@ -343,7 +344,6 @@ class TestMessage(TestCase):
                 filename="ünicödeß ←.→ ✓.txt",
             )
 
-            parsed = email.message_from_string(msg.as_string())
             self.assertIn(
                 'Content-Disposition: attachment; filename="unicode . .txt"',
                 msg.as_string(),
@@ -460,10 +460,10 @@ class TestMessage(TestCase):
         response = msg.as_string()
         a1 = sanitize_address("Ä <t1@example.com>")
         a2 = sanitize_address("Ü <t2@example.com>")
-        h1_a = Header("To: %s, %s" % (a1, a2))
-        h1_b = Header("To: %s, %s" % (a2, a1))
-        h2 = Header("From: %s" % sanitize_address("ÄÜÖ → ✓ <from@example.com>"))
-        h3 = Header("Cc: %s" % sanitize_address("Ö <cc@example.com>"))
+        h1_a = Header(f"To: {a1}, {a2}")
+        h1_b = Header(f"To: {a2}, {a1}")
+        h2 = Header("From: {}".format(sanitize_address("ÄÜÖ → ✓ <from@example.com>")))
+        h3 = Header("Cc: {}".format(sanitize_address("Ö <cc@example.com>")))
 
         # Ugly, but there's no guaranteed order of the recipients in the header
         try:
@@ -616,7 +616,6 @@ class TestMail(TestCase):
             self.mail.send(msg)
             self.assertIsNotNone(msg.date)
             self.assertEqual(len(outbox), 1)
-            sent_msg = outbox[0]
             self.assertEqual(msg.sender, self.app.extensions["mail"].default_sender)
 
     def test_send_message(self):
@@ -664,7 +663,7 @@ class TestConnection(TestCase):
     def test_send_many(self):
         with self.mail.record_messages() as outbox:
             with self.mail.connect() as conn:
-                for i in range(100):
+                for _i in range(100):
                     msg = Message(
                         subject="testing", recipients=["to@example.com"], body="testing"
                     )
@@ -707,7 +706,7 @@ class TestConnection(TestCase):
                 host.sendmail.assert_called_once_with(
                     "from@example.com",
                     ["to@example.com"],
-                    msg.as_bytes() if PY3 else msg.as_string(),
+                    msg.as_bytes(),
                     msg.mail_options,
                     msg.rcpt_options,
                 )
@@ -726,7 +725,7 @@ class TestConnection(TestCase):
                 host.sendmail.assert_called_once_with(
                     "from@example.com",
                     ["=?utf-8?b?w4TDnMOWIOKGkiDinJM=?= <to@example.com>"],
-                    msg.as_bytes() if PY3 else msg.as_string(),
+                    msg.as_bytes(),
                     msg.mail_options,
                     msg.rcpt_options,
                 )
@@ -745,7 +744,7 @@ class TestConnection(TestCase):
                 host.sendmail.assert_called_once_with(
                     "from@example.com",
                     ["to@example.com"],
-                    msg.as_bytes() if PY3 else msg.as_string(),
+                    msg.as_bytes(),
                     msg.mail_options,
                     msg.rcpt_options,
                 )
@@ -765,7 +764,7 @@ class TestConnection(TestCase):
                 host.sendmail.assert_called_once_with(
                     "from@example.com",
                     ["to@example.com"],
-                    msg.as_bytes() if PY3 else msg.as_string(),
+                    msg.as_bytes(),
                     msg.mail_options,
                     msg.rcpt_options,
                 )

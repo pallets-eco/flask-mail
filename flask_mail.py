@@ -12,11 +12,11 @@ __version__ = "0.9.1"
 
 import re
 import smtplib
-import sys
 import time
 import unicodedata
 from contextlib import contextmanager
 from email import charset
+from email import policy
 from email.encoders import encode_base64
 from email.header import Header
 from email.mime.base import MIMEBase
@@ -30,21 +30,6 @@ from email.utils import parseaddr
 import blinker
 from flask import current_app
 
-PY3 = sys.version_info[0] == 3
-
-PY34 = PY3 and sys.version_info[1] >= 4
-
-if PY3:
-    string_types = (str,)
-    text_type = str
-    from email import policy
-
-    message_policy = policy.SMTP
-else:
-    string_types = (basestring,)
-    text_type = unicode
-    message_policy = None
-
 charset.add_charset("utf-8", charset.SHORTEST, None, "utf-8")
 
 
@@ -55,37 +40,30 @@ class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
 
     def __str__(self):
         original = UnicodeDecodeError.__str__(self)
-        return "%s. You passed in %r (%s)" % (original, self.obj, type(self.obj))
+        return f"{original}. You passed in {self.obj!r} ({type(self.obj)})"
 
 
 def force_text(s, encoding="utf-8", errors="strict"):
     """
     Similar to smart_text, except that lazy instances are resolved to
     strings, rather than kept as lazy objects.
-
-    If strings_only is True, don't convert (some) non-string-like objects.
     """
-    if isinstance(s, text_type):
+    if isinstance(s, str):
         return s
 
     try:
-        if not isinstance(s, string_types):
-            if PY3:
-                if isinstance(s, bytes):
-                    s = text_type(s, encoding, errors)
-                else:
-                    s = text_type(s)
-            elif hasattr(s, "__unicode__"):
-                s = s.__unicode__()
+        if not isinstance(s, str):
+            if isinstance(s, bytes):
+                s = str(s, encoding, errors)
             else:
-                s = text_type(bytes(s), encoding, errors)
+                s = str(s)
         else:
             s = s.decode(encoding, errors)
     except UnicodeDecodeError as e:
         if not isinstance(s, Exception):
-            raise FlaskMailUnicodeDecodeError(s, *e.args)
+            raise FlaskMailUnicodeDecodeError(s, *e.args) from e
         else:
-            s = " ".join([force_text(arg, encoding, strings_only, errors) for arg in s])
+            s = " ".join([force_text(arg, encoding, errors) for arg in s])
     return s
 
 
@@ -101,7 +79,7 @@ def sanitize_subject(subject, encoding="utf-8"):
 
 
 def sanitize_address(addr, encoding="utf-8"):
-    if isinstance(addr, string_types):
+    if isinstance(addr, str):
         addr = parseaddr(force_text(addr))
     nm, addr = addr
 
@@ -191,7 +169,7 @@ class Connection:
             self.host.sendmail(
                 sanitize_address(envelope_from or message.sender),
                 list(sanitize_addresses(message.send_to)),
-                message.as_bytes() if PY3 else message.as_string(),
+                message.as_bytes(),
                 message.mail_options,
                 message.rcpt_options,
             )
@@ -254,7 +232,8 @@ class Message:
     :param recipients: list of email addresses
     :param body: plain text message
     :param html: HTML message
-    :param alts: A dict or an iterable to go through dict() that contains multipart alternatives
+    :param alts: A dict or an iterable to go through dict() that contains multipart
+                 alternatives
     :param sender: email sender address, or **MAIL_DEFAULT_SENDER** by default
     :param cc: CC list
     :param bcc: BCC list
@@ -288,7 +267,7 @@ class Message:
         sender = sender or current_app.extensions["mail"].default_sender
 
         if isinstance(sender, tuple):
-            sender = "%s <%s>" % sender
+            sender = "{} <{}>".format(*sender)
 
         self.recipients = recipients or []
         self.subject = subject
@@ -388,8 +367,6 @@ class Message:
             try:
                 filename and filename.encode("ascii")
             except UnicodeEncodeError:
-                if not PY3:
-                    filename = filename.encode("utf8")
                 filename = ("UTF8", "", filename)
 
             f.add_header(
@@ -400,8 +377,7 @@ class Message:
                 f.add_header(key, value)
 
             msg.attach(f)
-        if message_policy:
-            msg.policy = message_policy
+        msg.policy = policy.SMTP
 
         return msg
 
@@ -409,10 +385,7 @@ class Message:
         return self._message().as_string()
 
     def as_bytes(self):
-        if PY34:
-            return self._message().as_bytes()
-        else:  # fallback for old Python (3) versions
-            return self._message().as_string().encode(self.charset or "utf-8")
+        return self._message().as_bytes()
 
     def __str__(self):
         return self.as_string()
@@ -539,10 +512,10 @@ class _MailMixin:
         app = getattr(self, "app", None) or current_app
         try:
             return Connection(app.extensions["mail"])
-        except KeyError:
+        except KeyError as err:
             raise RuntimeError(
                 "The current application was not configured with Flask-Mail"
-            )
+            ) from err
 
 
 class _Mail(_MailMixin):
