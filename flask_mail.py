@@ -52,11 +52,10 @@ def force_text(s, encoding="utf-8", errors="strict"):
         return s
 
     try:
-        if not isinstance(s, str):
-            if isinstance(s, bytes):
-                s = str(s, encoding, errors)
-            else:
-                s = str(s)
+        if isinstance(s, bytes):
+            s = str(s, encoding, errors)
+        elif not isinstance(s, str):
+            s = str(s)
         else:
             s = s.decode(encoding, errors)
     except UnicodeDecodeError as e:
