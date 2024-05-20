@@ -425,7 +425,7 @@ class TestMessage(TestCase):
         h2 = Header("From: %s" % sanitize_address(u"ÄÜÖ → ✓ <from@example.com>"))
         h3 = Header("Cc: %s" % sanitize_address(u"Ö <cc@example.com>"))
 
-        # Ugly, but there's no guaranteed order of the recipieints in the header
+        # Ugly, but there's no guaranteed order of the recipients in the header
         try:
             self.assertIn(h1_a.encode(), response)
         except AssertionError:
