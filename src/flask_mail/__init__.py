@@ -1,51 +1,36 @@
-# -*- coding: utf-8 -*-
 """
-    flaskext.mail
-    ~~~~~~~~~~~~~
+flaskext.mail
+~~~~~~~~~~~~~
 
-    Flask extension for sending email.
+Flask extension for sending email.
 
-    :copyright: (c) 2010 by Dan Jacob.
-    :license: BSD, see LICENSE for more details.
+:copyright: (c) 2010 by Dan Jacob.
+:license: BSD, see LICENSE for more details.
 """
 
-from __future__ import with_statement
-
-__version__ = '0.9.1'
+__version__ = "0.9.1"
 
 import re
-import blinker
 import smtplib
-import sys
 import time
 import unicodedata
-
+from contextlib import contextmanager
 from email import charset
+from email import policy
 from email.encoders import encode_base64
+from email.header import Header
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.header import Header
-from email.utils import formatdate, formataddr, make_msgid, parseaddr
-from contextlib import contextmanager
+from email.utils import formataddr
+from email.utils import formatdate
+from email.utils import make_msgid
+from email.utils import parseaddr
 
+import blinker
 from flask import current_app
 
-PY3 = sys.version_info[0] == 3
-
-PY34 = PY3 and sys.version_info[1] >= 4
-
-if PY3:
-    string_types = str,
-    text_type = str
-    from email import policy
-    message_policy = policy.SMTP
-else:
-    string_types = basestring,
-    text_type = unicode
-    message_policy = None
-
-charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
+charset.add_charset("utf-8", charset.SHORTEST, None, "utf-8")
 
 
 class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
@@ -55,83 +40,77 @@ class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
 
     def __str__(self):
         original = UnicodeDecodeError.__str__(self)
-        return '%s. You passed in %r (%s)' % (original, self.obj, type(self.obj))
+        return f"{original}. You passed in {self.obj!r} ({type(self.obj)})"
 
 
-def force_text(s, encoding='utf-8', errors='strict'):
+def force_text(s, encoding="utf-8", errors="strict"):
     """
     Similar to smart_text, except that lazy instances are resolved to
     strings, rather than kept as lazy objects.
-
-    If strings_only is True, don't convert (some) non-string-like objects.
     """
-    if isinstance(s, text_type):
+    if isinstance(s, str):
         return s
 
     try:
-        if not isinstance(s, string_types):
-            if PY3:
-                if isinstance(s, bytes):
-                    s = text_type(s, encoding, errors)
-                else:
-                    s = text_type(s)
-            elif hasattr(s, '__unicode__'):
-                s = s.__unicode__()
-            else:
-                s = text_type(bytes(s), encoding, errors)
+        if isinstance(s, str):
+            return s
+        elif isinstance(s, bytes):
+            s = str(s, encoding, errors)
         else:
-            s = s.decode(encoding, errors)
+            s = str(s)
     except UnicodeDecodeError as e:
         if not isinstance(s, Exception):
-            raise FlaskMailUnicodeDecodeError(s, *e.args)
+            raise FlaskMailUnicodeDecodeError(s, *e.args) from e
         else:
-            s = ' '.join([force_text(arg, encoding, strings_only,
-                    errors) for arg in s])
+            s = " ".join([force_text(arg, encoding, errors) for arg in s])
     return s
 
-def sanitize_subject(subject, encoding='utf-8'):
+
+def sanitize_subject(subject, encoding="utf-8"):
     try:
-        subject.encode('ascii')
+        subject.encode("ascii")
     except UnicodeEncodeError:
         try:
             subject = Header(subject, encoding).encode()
         except UnicodeEncodeError:
-            subject = Header(subject, 'utf-8').encode()
+            subject = Header(subject, "utf-8").encode()
     return subject
 
-def sanitize_address(addr, encoding='utf-8'):
-    if isinstance(addr, string_types):
+
+def sanitize_address(addr, encoding="utf-8"):
+    if isinstance(addr, str):
         addr = parseaddr(force_text(addr))
     nm, addr = addr
 
     try:
         nm = Header(nm, encoding).encode()
     except UnicodeEncodeError:
-        nm = Header(nm, 'utf-8').encode()
+        nm = Header(nm, "utf-8").encode()
     try:
-        addr.encode('ascii')
+        addr.encode("ascii")
     except UnicodeEncodeError:  # IDN
-        if '@' in addr:
-            localpart, domain = addr.split('@', 1)
+        if "@" in addr:
+            localpart, domain = addr.split("@", 1)
             localpart = str(Header(localpart, encoding))
-            domain = domain.encode('idna').decode('ascii')
-            addr = '@'.join([localpart, domain])
+            domain = domain.encode("idna").decode("ascii")
+            addr = "@".join([localpart, domain])
         else:
             addr = Header(addr, encoding).encode()
     return formataddr((nm, addr))
 
 
-def sanitize_addresses(addresses, encoding='utf-8'):
+def sanitize_addresses(addresses, encoding="utf-8"):
     return map(lambda e: sanitize_address(e, encoding), addresses)
 
 
 def _has_newline(line):
     """Used by has_bad_header to check for \\r or \\n"""
-    if line and ('\r' in line or '\n' in line):
+    if line and ("\r" in line or "\n" in line):
         return True
     return False
 
-class Connection(object):
+
+class Connection:
     """Handles connection to host."""
 
     def __init__(self, mail):
@@ -175,8 +154,9 @@ class Connection(object):
         assert message.send_to, "No recipients have been added"
 
         assert message.sender, (
-                "The message does not specify a sender and a default sender "
-                "has not been configured")
+            "The message does not specify a sender and a default sender "
+            "has not been configured"
+        )
 
         if message.has_bad_headers():
             raise BadHeaderError
@@ -185,11 +165,13 @@ class Connection(object):
             message.date = time.time()
 
         if self.host:
-            self.host.sendmail(sanitize_address(envelope_from or message.sender),
-                               list(sanitize_addresses(message.send_to)),
-                               message.as_bytes() if PY3 else message.as_string(),
-                               message.mail_options,
-                               message.rcpt_options)
+            self.host.sendmail(
+                sanitize_address(envelope_from or message.sender),
+                list(sanitize_addresses(message.send_to)),
+                message.as_bytes(),
+                message.mail_options,
+                message.rcpt_options,
+            )
 
         email_dispatched.send(message, app=current_app._get_current_object())
 
@@ -216,7 +198,7 @@ class BadHeaderError(Exception):
     pass
 
 
-class Attachment(object):
+class Attachment:
     """Encapsulates file attachment information.
 
     :versionadded: 0.3.5
@@ -227,23 +209,30 @@ class Attachment(object):
     :param disposition: content-disposition (if any)
     """
 
-    def __init__(self, filename=None, content_type=None, data=None,
-                 disposition=None, headers=None):
+    def __init__(
+        self,
+        filename=None,
+        content_type=None,
+        data=None,
+        disposition=None,
+        headers=None,
+    ):
         self.filename = filename
         self.content_type = content_type
         self.data = data
-        self.disposition = disposition or 'attachment'
+        self.disposition = disposition or "attachment"
         self.headers = headers or {}
 
 
-class Message(object):
+class Message:
     """Encapsulates an email message.
 
     :param subject: email subject header
     :param recipients: list of email addresses
     :param body: plain text message
     :param html: HTML message
-    :param alts: A dict or an iterable to go through dict() that contains multipart alternatives
+    :param alts: A dict or an iterable to go through dict() that contains multipart
+                 alternatives
     :param sender: email sender address, or **MAIL_DEFAULT_SENDER** by default
     :param cc: CC list
     :param bcc: BCC list
@@ -256,26 +245,28 @@ class Message(object):
     :param rcpt_options:  A list of ESMTP options to be used in RCPT commands
     """
 
-    def __init__(self, subject='',
-                 recipients=None,
-                 body=None,
-                 html=None,
-                 alts=None,
-                 sender=None,
-                 cc=None,
-                 bcc=None,
-                 attachments=None,
-                 reply_to=None,
-                 date=None,
-                 charset=None,
-                 extra_headers=None,
-                 mail_options=None,
-                 rcpt_options=None):
-
-        sender = sender or current_app.extensions['mail'].default_sender
+    def __init__(
+        self,
+        subject="",
+        recipients=None,
+        body=None,
+        html=None,
+        alts=None,
+        sender=None,
+        cc=None,
+        bcc=None,
+        attachments=None,
+        reply_to=None,
+        date=None,
+        charset=None,
+        extra_headers=None,
+        mail_options=None,
+        rcpt_options=None,
+    ):
+        sender = sender or current_app.extensions["mail"].default_sender
 
         if isinstance(sender, tuple):
-            sender = "%s <%s>" % sender
+            sender = "{} <{}>".format(*sender)
 
         self.recipients = recipients or []
         self.subject = subject
@@ -300,26 +291,26 @@ class Message(object):
 
     @property
     def html(self):
-        return self.alts.get('html')
+        return self.alts.get("html")
 
     @html.setter
     def html(self, value):
         if value is None:
-            self.alts.pop('html', None)
+            self.alts.pop("html", None)
         else:
-            self.alts['html'] = value
+            self.alts["html"] = value
 
-    def _mimetext(self, text, subtype='plain'):
+    def _mimetext(self, text, subtype="plain"):
         """Creates a MIMEText object with the given subtype (default: 'plain')
         If the text is unicode, the utf-8 charset is used.
         """
-        charset = self.charset or 'utf-8'
+        charset = self.charset or "utf-8"
         return MIMEText(text, _subtype=subtype, _charset=charset)
 
     def _message(self):
         """Creates the email"""
-        ascii_attachments = current_app.extensions['mail'].ascii_attachments
-        encoding = self.charset or 'utf-8'
+        ascii_attachments = current_app.extensions["mail"].ascii_attachments
+        encoding = self.charset or "utf-8"
 
         attachments = self.attachments or []
 
@@ -333,62 +324,59 @@ class Message(object):
         else:
             # Anything else
             msg = MIMEMultipart()
-            alternative = MIMEMultipart('alternative')
-            alternative.attach(self._mimetext(self.body, 'plain'))
+            alternative = MIMEMultipart("alternative")
+            alternative.attach(self._mimetext(self.body, "plain"))
             for mimetype, content in self.alts.items():
                 alternative.attach(self._mimetext(content, mimetype))
             msg.attach(alternative)
 
         if self.subject:
-            msg['Subject'] = sanitize_subject(force_text(self.subject), encoding)
+            msg["Subject"] = sanitize_subject(force_text(self.subject), encoding)
 
-        msg['From'] = sanitize_address(self.sender, encoding)
-        msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
+        msg["From"] = sanitize_address(self.sender, encoding)
+        msg["To"] = ", ".join(list(set(sanitize_addresses(self.recipients, encoding))))
 
-        msg['Date'] = formatdate(self.date, localtime=True)
+        msg["Date"] = formatdate(self.date, localtime=True)
         # see RFC 5322 section 3.6.4.
-        msg['Message-ID'] = self.msgId
+        msg["Message-ID"] = self.msgId
 
         if self.cc:
-            msg['Cc'] = ', '.join(list(set(sanitize_addresses(self.cc, encoding))))
+            msg["Cc"] = ", ".join(list(set(sanitize_addresses(self.cc, encoding))))
 
         if self.reply_to:
-            msg['Reply-To'] = sanitize_address(self.reply_to, encoding)
+            msg["Reply-To"] = sanitize_address(self.reply_to, encoding)
 
         if self.extra_headers:
             for k, v in self.extra_headers.items():
                 msg[k] = v
 
-        SPACES = re.compile(r'[\s]+', re.UNICODE)
+        SPACES = re.compile(r"[\s]+", re.UNICODE)
         for attachment in attachments:
-            f = MIMEBase(*attachment.content_type.split('/'))
+            f = MIMEBase(*attachment.content_type.split("/"))
             f.set_payload(attachment.data)
             encode_base64(f)
 
             filename = attachment.filename
             if filename and ascii_attachments:
                 # force filename to ascii
-                filename = unicodedata.normalize('NFKD', filename)
-                filename = filename.encode('ascii', 'ignore').decode('ascii')
-                filename = SPACES.sub(u' ', filename).strip()
+                filename = unicodedata.normalize("NFKD", filename)
+                filename = filename.encode("ascii", "ignore").decode("ascii")
+                filename = SPACES.sub(" ", filename).strip()
 
             try:
-                filename and filename.encode('ascii')
+                filename and filename.encode("ascii")
             except UnicodeEncodeError:
-                if not PY3:
-                    filename = filename.encode('utf8')
-                filename = ('UTF8', '', filename)
+                filename = ("UTF8", "", filename)
 
-            f.add_header('Content-Disposition',
-                         attachment.disposition,
-                         filename=filename)
+            f.add_header(
+                "Content-Disposition", attachment.disposition, filename=filename
+            )
 
             for key, value in attachment.headers.items():
                 f.add_header(key, value)
 
             msg.attach(f)
-        if message_policy:
-            msg.policy = message_policy
+        msg.policy = policy.SMTP
 
         return msg
 
@@ -396,10 +384,7 @@ class Message(object):
         return self._message().as_string()
 
     def as_bytes(self):
-        if PY34:
-            return self._message().as_bytes()
-        else: # fallback for old Python (3) versions
-            return self._message().as_string().encode(self.charset or 'utf-8')
+        return self._message().as_bytes()
 
     def __str__(self):
         return self.as_string()
@@ -419,10 +404,10 @@ class Message(object):
 
         if self.subject:
             if _has_newline(self.subject):
-                for linenum, line in enumerate(self.subject.split('\r\n')):
+                for linenum, line in enumerate(self.subject.split("\r\n")):
                     if not line:
                         return True
-                    if linenum > 0 and line[0] not in '\t ':
+                    if linenum > 0 and line[0] not in "\t ":
                         return True
                     if _has_newline(line):
                         return True
@@ -432,7 +417,10 @@ class Message(object):
 
     def is_bad_headers(self):
         from warnings import warn
-        msg = 'is_bad_headers is deprecated, use the new has_bad_headers method instead.'
+
+        msg = (
+            "is_bad_headers is deprecated, use the new has_bad_headers method instead."
+        )
         warn(DeprecationWarning(msg), stacklevel=1)
         return self.has_bad_headers()
 
@@ -449,12 +437,14 @@ class Message(object):
 
         self.recipients.append(recipient)
 
-    def attach(self,
-               filename=None,
-               content_type=None,
-               data=None,
-               disposition=None,
-               headers=None):
+    def attach(
+        self,
+        filename=None,
+        content_type=None,
+        data=None,
+        disposition=None,
+        headers=None,
+    ):
         """Adds an attachment to the message.
 
         :param filename: filename of attachment
@@ -463,11 +453,11 @@ class Message(object):
         :param disposition: content-disposition (if any)
         """
         self.attachments.append(
-            Attachment(filename, content_type, data, disposition, headers))
+            Attachment(filename, content_type, data, disposition, headers)
+        )
 
 
-class _MailMixin(object):
-
+class _MailMixin:
     @contextmanager
     def record_messages(self):
         """Records all messages. Use in unit tests for example::
@@ -520,15 +510,28 @@ class _MailMixin(object):
         """Opens a connection to the mail host."""
         app = getattr(self, "app", None) or current_app
         try:
-            return Connection(app.extensions['mail'])
-        except KeyError:
-            raise RuntimeError("The curent application was not configured with Flask-Mail")
+            return Connection(app.extensions["mail"])
+        except KeyError as err:
+            raise RuntimeError(
+                "The current application was not configured with Flask-Mail"
+            ) from err
 
 
 class _Mail(_MailMixin):
-    def __init__(self, server, username, password, port, use_tls, use_ssl,
-                 default_sender, debug, max_emails, suppress,
-                 ascii_attachments=False):
+    def __init__(
+        self,
+        server,
+        username,
+        password,
+        port,
+        use_tls,
+        use_ssl,
+        default_sender,
+        debug,
+        max_emails,
+        suppress,
+        ascii_attachments=False,
+    ):
         self.server = server
         self.username = username
         self.password = password
@@ -557,17 +560,17 @@ class Mail(_MailMixin):
 
     def init_mail(self, config, debug=False, testing=False):
         return _Mail(
-            config.get('MAIL_SERVER', '127.0.0.1'),
-            config.get('MAIL_USERNAME'),
-            config.get('MAIL_PASSWORD'),
-            config.get('MAIL_PORT', 25),
-            config.get('MAIL_USE_TLS', False),
-            config.get('MAIL_USE_SSL', False),
-            config.get('MAIL_DEFAULT_SENDER'),
-            int(config.get('MAIL_DEBUG', debug)),
-            config.get('MAIL_MAX_EMAILS'),
-            config.get('MAIL_SUPPRESS_SEND', testing),
-            config.get('MAIL_ASCII_ATTACHMENTS', False)
+            config.get("MAIL_SERVER", "127.0.0.1"),
+            config.get("MAIL_USERNAME"),
+            config.get("MAIL_PASSWORD"),
+            config.get("MAIL_PORT", 25),
+            config.get("MAIL_USE_TLS", False),
+            config.get("MAIL_USE_SSL", False),
+            config.get("MAIL_DEFAULT_SENDER"),
+            int(config.get("MAIL_DEBUG", debug)),
+            config.get("MAIL_MAX_EMAILS"),
+            config.get("MAIL_SUPPRESS_SEND", testing),
+            config.get("MAIL_ASCII_ATTACHMENTS", False),
         )
 
     def init_app(self, app):
@@ -581,8 +584,8 @@ class Mail(_MailMixin):
         state = self.init_mail(app.config, app.debug, app.testing)
 
         # register extension with app
-        app.extensions = getattr(app, 'extensions', {})
-        app.extensions['mail'] = state
+        app.extensions = getattr(app, "extensions", {})
+        app.extensions["mail"] = state
         return state
 
     def __getattr__(self, name):
@@ -591,7 +594,10 @@ class Mail(_MailMixin):
 
 signals = blinker.Namespace()
 
-email_dispatched = signals.signal("email-dispatched", doc="""
+email_dispatched = signals.signal(
+    "email-dispatched",
+    doc="""
 Signal sent when an email is dispatched. This signal will also be sent
 in testing mode, even though the email will not actually be sent.
-""")
+""",
+)
