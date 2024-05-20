@@ -89,7 +89,7 @@ process but with different configuration options.
 .. admonition:: Load email configuration
 
    Note that Flask-Mail needs the configuration parameters to create a mail handler, so you have to make
-   sure to load your configuration **before** the initialization of Flask-Mail (either use ``Mail`` class 
+   sure to load your configuration **before** the initialization of Flask-Mail (either use ``Mail`` class
    constructor or ``init_app`` method).
 
 Sending messages
