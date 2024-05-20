@@ -12,9 +12,9 @@ The **Flask-Mail** extension provides a simple interface to set up SMTP with you
 Links
 -----
 
-* `documentation <http://packages.python.org/Flask-Mail/>`_
-* `source <http://github.com/mattupstate/flask-mail>`_
-* :doc:`changelog </changelog>`
+* `documentation <https://flask-mail.readthedocs.io/en/latest/>`_
+* `source <http://github.com/pallets-eco/flask-mail>`_
+* :doc:`changes </changes>`
 
 Installing Flask-Mail
 ---------------------
@@ -251,3 +251,9 @@ API
 
 .. _Flask: http://flask.pocoo.org
 .. _GitHub: http://github.com/mattupstate/flask-mail
+
+
+.. toctree::
+   :maxdepth: 2
+
+   changes
