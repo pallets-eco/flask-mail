@@ -98,6 +98,3 @@ html_copy_source = False
 html_show_copyright = False
 html_use_index = False
 html_domain_indices = False
-# html_theme_options = {
-# "index_logo": "flask-mail.png"
-# }  # FIXME: WLACH: Figure out if we want/can use this
