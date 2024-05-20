@@ -28,18 +28,11 @@ setup(
     py_modules=[
         'flask_mail'
     ],
-    test_suite='nose.collector',
     zip_safe=False,
     platforms='any',
     install_requires=[
         'Flask',
         'blinker',
-    ],
-    tests_require=[
-        'nose',
-        'blinker',
-        'speaklater',
-        'mock',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
