@@ -15,12 +15,18 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["Flask", "blinker"]
-license = { text = "BSD" }
+dependencies = [
+    "flask",
+    "blinker",
+]
+license = { file = "LICENSE" }
 requires-python = ">=3.8"
 
 [project.urls]
-Homepage = "https://github.com/pallets-eco/flask-mail"
+Documentation = "https://flask-mail.readthedocs.io"
+Changes = "https://flask-mail.readthedocs.io/en/latest/changes/"
+Source = "https://github.com/pallets-eco/flask-mail/"
+Chat = "https://discord.gg/pallets"
 
 [build-system]
 requires = ["flit_core<4"]
