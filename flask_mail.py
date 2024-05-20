@@ -48,9 +48,6 @@ def force_text(s, encoding="utf-8", errors="strict"):
     Similar to smart_text, except that lazy instances are resolved to
     strings, rather than kept as lazy objects.
     """
-    if isinstance(s, str):
-        return s
-
     try:
         if isinstance(s, str):
             s = s.decode(encoding, errors)
