@@ -3,7 +3,7 @@ name = "Flask-Mail"
 version = "0.9.1"
 description = "Flask extension for sending email"
 readme = "README.md"
-authors = [{ name = "Dan Jacob", email = "danjac354@gmail.com" }]
+authors = [{ name = "Dan Jacob" }]
 maintainers = [{ name = "Pallets Ecosystem", email = "contact@palletsprojects.com" }]
 classifiers = [
     "Development Status :: 4 - Beta",
