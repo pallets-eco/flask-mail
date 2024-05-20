@@ -1,1 +1,3 @@
+```{eval-rst}
 .. include:: ../CHANGES
+```

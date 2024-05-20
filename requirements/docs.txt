@@ -13,7 +13,9 @@ certifi==2024.2.2
 charset-normalizer==3.3.2
     # via requests
 docutils==0.20.1
-    # via sphinx
+    # via
+    #   myst-parser
+    #   sphinx
 idna==3.7
     # via requests
 imagesize==1.4.1
@@ -21,9 +23,21 @@ imagesize==1.4.1
 importlib-metadata==7.1.0
     # via sphinx
 jinja2==3.1.4
-    # via sphinx
+    # via
+    #   myst-parser
+    #   sphinx
+markdown-it-py==3.0.0
+    # via
+    #   mdit-py-plugins
+    #   myst-parser
 markupsafe==2.1.5
     # via jinja2
+mdit-py-plugins==0.4.1
+    # via myst-parser
+mdurl==0.1.2
+    # via markdown-it-py
+myst-parser==3.0.1
+    # via -r docs.in
 packaging==24.0
     # via
     #   pallets-sphinx-themes
@@ -34,13 +48,16 @@ pygments==2.18.0
     # via sphinx
 pytz==2024.1
     # via babel
-requests==2.32.0
+pyyaml==6.0.1
+    # via myst-parser
+requests==2.32.1
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
 sphinx==7.1.2
     # via
     #   -r docs.in
+    #   myst-parser
     #   pallets-sphinx-themes
     #   sphinxcontrib-log-cabinet
 sphinxcontrib-applehelp==1.0.4
