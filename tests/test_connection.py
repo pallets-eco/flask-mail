@@ -6,8 +6,7 @@ from flask_mail import BadHeaderError
 from flask_mail import Message
 
 
-def test_send_message(flask_mail):
-    app, mail = flask_mail
+def test_send_message(app, mail):
     with mail.record_messages() as outbox:
         with mail.connect() as conn:
             conn.send_message(
@@ -18,8 +17,7 @@ def test_send_message(flask_mail):
         assert sent_msg.sender == app.extensions["mail"].default_sender
 
 
-def test_send_single(flask_mail):
-    app, mail = flask_mail
+def test_send_single(app, mail):
     with mail.record_messages() as outbox:
         with mail.connect() as conn:
             msg = Message(
@@ -34,8 +32,7 @@ def test_send_single(flask_mail):
         assert sent_msg.sender == app.extensions["mail"].default_sender
 
 
-def test_send_many(flask_mail):
-    app, mail = flask_mail
+def test_send_many(app, mail):
     with mail.record_messages() as outbox:
         with mail.connect() as conn:
             for _i in range(100):
@@ -48,8 +45,7 @@ def test_send_many(flask_mail):
         assert sent_msg.sender == app.extensions["mail"].default_sender
 
 
-def test_send_without_sender(flask_mail):
-    app, mail = flask_mail
+def test_send_without_sender(app, mail):
     app.extensions["mail"].default_sender = None
     msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
     with mail.connect() as conn:
@@ -57,24 +53,21 @@ def test_send_without_sender(flask_mail):
             conn.send(msg)
 
 
-def test_send_without_recipients(flask_mail):
-    _, mail = flask_mail
+def test_send_without_recipients(mail):
     msg = Message(subject="testing", recipients=[], body="testing")
     with mail.connect() as conn:
         with pytest.raises(AssertionError):
             conn.send(msg)
 
 
-def test_bad_header_subject(flask_mail):
-    _, mail = flask_mail
+def test_bad_header_subject(mail):
     msg = Message(subject="testing\n\r", body="testing", recipients=["to@example.com"])
     with mail.connect() as conn:
         with pytest.raises(BadHeaderError):
             conn.send(msg)
 
 
-def test_sendmail_with_ascii_recipient(flask_mail):
-    _, mail = flask_mail
+def test_sendmail_with_ascii_recipient(mail):
     with mail.connect() as conn:
         with mock.patch.object(conn, "host") as host:
             msg = Message(
@@ -94,8 +87,7 @@ def test_sendmail_with_ascii_recipient(flask_mail):
             )
 
 
-def test_sendmail_with_non_ascii_recipient(flask_mail):
-    _, mail = flask_mail
+def test_sendmail_with_non_ascii_recipient(mail):
     with mail.connect() as conn:
         with mock.patch.object(conn, "host") as host:
             msg = Message(
@@ -115,8 +107,7 @@ def test_sendmail_with_non_ascii_recipient(flask_mail):
             )
 
 
-def test_sendmail_with_ascii_body(flask_mail):
-    _, mail = flask_mail
+def test_sendmail_with_ascii_body(mail):
     with mail.connect() as conn:
         with mock.patch.object(conn, "host") as host:
             msg = Message(
@@ -136,8 +127,7 @@ def test_sendmail_with_ascii_body(flask_mail):
             )
 
 
-def test_sendmail_with_non_ascii_body(flask_mail):
-    _, mail = flask_mail
+def test_sendmail_with_non_ascii_body(mail):
     with mail.connect() as conn:
         with mock.patch.object(conn, "host") as host:
             msg = Message(
