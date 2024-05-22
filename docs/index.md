@@ -82,11 +82,11 @@ In this case emails will be sent using the configuration values from Flask's `cu
 context global. This is useful if you have multiple applications running in the same
 process but with different configuration options.
 
-:::{admonition} Load email configuration
+```{admonition} Load email configuration
 Note that Flask-Mail needs the configuration parameters to create a mail handler, so you have to make
 sure to load your configuration **before** the initialization of Flask-Mail (either use `Mail` class
 constructor or `init_app` method).
-:::
+```
 
 ## Sending messages
 
@@ -137,7 +137,7 @@ msg.html = "<b>testing</b>"
 
 Finally, to send the message, you use the `Mail` instance configured with your Flask application:
 
-```
+```py
 mail.send(msg)
 ```
 
@@ -170,14 +170,14 @@ of emails to send before reconnecting by specifying the **MAIL_MAX_EMAILS** sett
 
 Adding attachments is straightforward:
 
-```
+```py
 with app.open_resource("image.png") as fp:
     msg.attach("image.png", "image/png", fp.read())
 ```
 
 See the [API] for details.
 
-If `MAIL_ASCII_ATTACHMENTS` is set to **True**, filenames will be converted to
+If `MAIL_ASCII_ATTACHMENTS` is set to `True`, filenames will be converted to
 an ASCII equivalent. This can be useful when using a mail relay that modify mail
 content and mess up Content-Disposition specification when filenames are UTF-8
 encoded. The conversion to ASCII is a basic removal of non-ASCII characters. It
@@ -194,8 +194,8 @@ If the setting `TESTING` is set to `True`, emails will be
 suppressed. Calling `send()` on your messages will not result in
 any messages being actually sent.
 
-Alternatively outside a testing environment you can set `MAIL_SUPPRESS_SEND` to **True**. This
-will have the same effect.
+Alternatively outside a testing environment you can set `MAIL_SUPPRESS_SEND` to `True`.
+This will have the same effect.
 
 However, it's still useful to keep track of emails that would have been
 sent when you are writing unit tests.
@@ -228,8 +228,9 @@ a message with newlines in the subject, sender or recipient addresses will resul
 
 ## Signalling support
 
-:::{versionadded} 0.4
-:::
+```{versionadded} 0.4
+
+```
 
 **Flask-Mail** now provides signalling support through a `email_dispatched` signal. This is sent whenever an email is
 dispatched (even if the email is not actually sent, i.e. in a testing environment).
@@ -237,7 +238,7 @@ dispatched (even if the email is not actually sent, i.e. in a testing environmen
 A function connecting to the `email_dispatched` signal takes a `Message` instance as a first argument, and the Flask
 app instance as an optional argument:
 
-```
+```py
 def log_message(message, app):
     app.logger.debug(message.subject)
 

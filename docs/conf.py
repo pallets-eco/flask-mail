@@ -20,13 +20,9 @@ extensions = [
     "sphinx.ext.intersphinx",
     "pallets_sphinx_themes",
 ]
-myst_enable_extensions = ["colon_fence"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
-
-# The suffix of source filenames.
-source_suffix = [".md", ".rst"]
 
 # The encoding of source files.
 # source_encoding = 'utf-8'
