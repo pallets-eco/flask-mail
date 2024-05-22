@@ -18,18 +18,10 @@ The **Flask-Mail** extension provides a simple interface to set up SMTP with you
 
 ## Installing Flask-Mail
 
-Install with **pip** and **easy_install**:
+Install with **pip**:
 
 ```sh
 pip install Flask-Mail
-```
-
-or download the latest version from version control:
-
-```sh
-git clone https://github.com/mattupstate/flask-mail.git
-cd flask-mail
-python setup.py install
 ```
 
 If you are using **virtualenv**, it is assumed that you are installing flask-mail
@@ -276,5 +268,4 @@ email_dispatched.connect(log_message)
 changes
 ```
 
-[flask]: http://flask.pocoo.org
-[github]: http://github.com/mattupstate/flask-mail
+[flask]: https://flask.palletsprojects.com/

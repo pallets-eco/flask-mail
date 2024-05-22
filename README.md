@@ -13,6 +13,7 @@ pip install Flask-Mail
 ## Usage
 
 To use Flask-Mail in your Flask application, you need to import and configure it. Here's a simple example:
+
 ```python
 from flask import Flask
 from flask_mail import Mail, Message
@@ -38,6 +39,7 @@ def send_email():
   mail.send(msg)
   return 'Email sent succesfully!'
 ```
+
 Make sure to replace placeholder values in the configuration with your actual email server details.
 
 ## Documentation
@@ -46,4 +48,4 @@ For more detailed information and advanced usage, please refer to the official [
 
 ## Contributing
 
-If you encounter any issues or have suggestions for improvements, feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/mattupstate/flask-mail).
+If you encounter any issues or have suggestions for improvements, feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/pallets-eco/flask-mail).
