@@ -1,6 +1,6 @@
 [project]
 name = "Flask-Mail"
-version = "0.10.0.dev"
+version = "0.10.0"
 description = "Flask extension for sending email"
 readme = "README.md"
 license = { file = "LICENSE.txt" }
