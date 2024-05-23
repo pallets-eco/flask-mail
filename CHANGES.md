@@ -6,12 +6,16 @@ Unreleased
 -   Use `pyproject.toml` for packaging metadata.
 -   Use `flit_core` as build backend.
 -   Apply code formatting and linting tools.
+-   Add static type annotations.
 -   Deprecate the `__version__` attribute. Use feature detection or
     `importlib.metadata.version("flask-mail")` instead.
 -   Indicate that the deprecated `is_bad_headers` will be removed in the next
     version.
 -   Fix the `email_dispatched` signal to pass the current app as the sender and
     `message` as an argument, rather than the other way around.
+-   `Attachment.data` may not be `None`.
+-   `Attachment.content_type` will be detected based on `filename` and `data`
+    and will not be `None`.
 
 
 ## Version 0.9.1

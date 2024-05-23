@@ -1,24 +1,28 @@
+from __future__ import annotations
+
 import base64
-import email
+import email.message
+import email.utils
 import re
 import time
+from email.header import Header
 
 import pytest
-from speaklater import make_lazy_string
+from flask import Flask
 
 from flask_mail import BadHeaderError
-from flask_mail import Header
+from flask_mail import Mail
 from flask_mail import Message
 from flask_mail import sanitize_address
 
 
-def test_init_message(app, mail):
+def test_init_message(app: Flask, mail: Mail) -> None:
     msg = Message(subject="subject", recipients=["to@example.com"])
     assert msg.sender == app.extensions["mail"].default_sender
     assert msg.recipients == ["to@example.com"]
 
 
-def test_init_message_recipients(app, mail):
+def test_init_message_recipients(app: Flask, mail: Mail) -> None:
     msg = Message(subject="subject")
     assert msg.recipients == []
 
@@ -27,7 +31,7 @@ def test_init_message_recipients(app, mail):
     assert len(msg2.recipients) == 1
 
 
-def test_esmtp_options_properly_initialized(app, mail):
+def test_esmtp_options_properly_initialized(app: Flask, mail: Mail) -> None:
     msg = Message(subject="subject")
     assert msg.mail_options == []
     assert msg.rcpt_options == []
@@ -39,7 +43,7 @@ def test_esmtp_options_properly_initialized(app, mail):
     assert msg2.rcpt_options == ["NOTIFY=SUCCESS"]
 
 
-def test_sendto_properly_set(app, mail):
+def test_sendto_properly_set(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="subject",
         recipients=["somebody@here.com"],
@@ -51,24 +55,24 @@ def test_sendto_properly_set(app, mail):
     assert len(msg.send_to) == 3
 
 
-def test_add_recipient(app, mail):
+def test_add_recipient(app: Flask, mail: Mail) -> None:
     msg = Message("testing")
     msg.add_recipient("to@example.com")
     assert msg.recipients == ["to@example.com"]
 
 
-def test_sender_as_tuple(app, mail):
+def test_sender_as_tuple(app: Flask, mail: Mail) -> None:
     msg = Message(subject="testing", sender=("tester", "tester@example.com"))
     assert "tester <tester@example.com>" == msg.sender
 
 
-def test_default_sender_as_tuple(app, mail):
+def test_default_sender_as_tuple(app: Flask, mail: Mail) -> None:
     app.extensions["mail"].default_sender = ("tester", "tester@example.com")
     msg = Message(subject="testing")
     assert "tester <tester@example.com>" == msg.sender
 
 
-def test_reply_to(app, mail):
+def test_reply_to(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="testing",
         recipients=["to@example.com"],
@@ -84,21 +88,21 @@ def test_reply_to(app, mail):
     assert h.encode() in str(response)
 
 
-def test_send_without_sender(app, mail):
+def test_send_without_sender(app: Flask, mail: Mail) -> None:
     app.extensions["mail"].default_sender = None
     msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
     with pytest.raises(AssertionError):
         mail.send(msg)
 
 
-def test_send_without_recipients(app, mail):
+def test_send_without_recipients(app: Flask, mail: Mail) -> None:
     app.extensions["mail"].default_sender = None
     msg = Message(subject="testing", recipients=[], body="testing")
     with pytest.raises(AssertionError):
         mail.send(msg)
 
 
-def test_bcc(app, mail):
+def test_bcc(app: Flask, mail: Mail) -> None:
     msg = Message(
         sender="from@example.com",
         subject="testing",
@@ -110,7 +114,7 @@ def test_bcc(app, mail):
     assert "tosomeoneelse@example.com" not in str(response)
 
 
-def test_cc(app, mail):
+def test_cc(app: Flask, mail: Mail) -> None:
     msg = Message(
         sender="from@example.com",
         subject="testing",
@@ -122,7 +126,7 @@ def test_cc(app, mail):
     assert "Cc: tosomeoneelse@example.com" in str(response)
 
 
-def test_attach(app, mail):
+def test_attach(app: Flask, mail: Mail) -> None:
     msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
     msg.attach(data=b"this is a test", content_type="text/plain")
     a = msg.attachments[0]
@@ -132,7 +136,7 @@ def test_attach(app, mail):
     assert a.data == b"this is a test"
 
 
-def test_bad_header_subject(app, mail):
+def test_bad_header_subject(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="testing\r\n",
         sender="from@example.com",
@@ -143,7 +147,7 @@ def test_bad_header_subject(app, mail):
         mail.send(msg)
 
 
-def test_multiline_subject(app, mail):
+def test_multiline_subject(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="testing\r\n testing\r\n testing \r\n \ttesting",
         sender="from@example.com",
@@ -156,7 +160,7 @@ def test_multiline_subject(app, mail):
     assert "testing\r\n testing\r\n testing \r\n \ttesting" in str(response)
 
 
-def test_bad_multiline_subject(app, mail):
+def test_bad_multiline_subject(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="testing\r\n testing\r\n ",
         sender="from@example.com",
@@ -185,7 +189,7 @@ def test_bad_multiline_subject(app, mail):
         mail.send(msg)
 
 
-def test_bad_header_sender(app, mail):
+def test_bad_header_sender(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="testing",
         sender="from@example.com\r\n",
@@ -196,7 +200,7 @@ def test_bad_header_sender(app, mail):
     assert "From: from@example.com" in msg.as_string()
 
 
-def test_bad_header_reply_to(app, mail):
+def test_bad_header_reply_to(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="testing",
         sender="from@example.com",
@@ -210,7 +214,7 @@ def test_bad_header_reply_to(app, mail):
     assert "Reply-To: evil@example.com" in msg.as_string()
 
 
-def test_bad_header_recipient(app, mail):
+def test_bad_header_recipient(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="testing",
         sender="from@example.com",
@@ -221,7 +225,7 @@ def test_bad_header_recipient(app, mail):
     assert "To: to@example.com" in msg.as_string()
 
 
-def test_emails_are_sanitized(app, mail):
+def test_emails_are_sanitized(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="testing",
         sender="sender\r\n@example.com",
@@ -233,7 +237,7 @@ def test_emails_are_sanitized(app, mail):
     assert "recipient@example.com" in msg.as_string()
 
 
-def test_plain_message(app, mail):
+def test_plain_message(app: Flask, mail: Mail) -> None:
     plain_text = "Hello Joe,\nHow are you?"
     msg = Message(
         sender="from@example.com",
@@ -245,7 +249,7 @@ def test_plain_message(app, mail):
     assert "Content-Type: text/plain" in msg.as_string()
 
 
-def test_message_str(app, mail):
+def test_message_str(app: Flask, mail: Mail) -> None:
     msg = Message(
         sender="from@example.com",
         subject="subject",
@@ -255,7 +259,7 @@ def test_message_str(app, mail):
     assert msg.as_string() == str(msg)
 
 
-def test_plain_message_with_attachments(app, mail):
+def test_plain_message_with_attachments(app: Flask, mail: Mail) -> None:
     msg = Message(
         sender="from@example.com",
         subject="subject",
@@ -268,7 +272,7 @@ def test_plain_message_with_attachments(app, mail):
     assert "Content-Type: multipart/mixed" in msg.as_string()
 
 
-def test_plain_message_with_ascii_attachment(app, mail):
+def test_plain_message_with_ascii_attachment(app: Flask, mail: Mail) -> None:
     msg = Message(subject="subject", recipients=["to@example.com"], body="hello")
 
     msg.attach(
@@ -278,7 +282,7 @@ def test_plain_message_with_ascii_attachment(app, mail):
     assert 'Content-Disposition: attachment; filename="test doc.txt"' in msg.as_string()
 
 
-def test_plain_message_with_unicode_attachment(app, mail):
+def test_plain_message_with_unicode_attachment(app: Flask, mail: Mail) -> None:
     msg = Message(subject="subject", recipients=["to@example.com"], body="hello")
 
     msg.attach(
@@ -288,15 +292,20 @@ def test_plain_message_with_unicode_attachment(app, mail):
     )
 
     parsed = email.message_from_string(msg.as_string())
+    payload = parsed.get_payload(1)
+    assert isinstance(payload, email.message.Message)
+    disposition = payload.get("Content-Disposition")
+    assert disposition is not None
+    disposition = re.sub(r"\s+", " ", disposition)
 
-    assert re.sub(r"\s+", " ", parsed.get_payload()[1].get("Content-Disposition")) in [
+    assert disposition in [
         "attachment; filename*=\"UTF8''%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt\"",  # noqa: E501
         "attachment; filename*=UTF8''%C3%BCnic%C3%B6de%20%E2%86%90%E2%86%92%20%E2%9C%93.txt",  # noqa: E501
     ]
 
 
-def test_plain_message_with_ascii_converted_attachment(app, mail):
-    mail.state.ascii_attachments = True
+def test_plain_message_with_ascii_converted_attachment(app: Flask, mail: Mail) -> None:
+    mail.state.ascii_attachments = True  # type: ignore[union-attr]
     msg = Message(subject="subject", recipients=["to@example.com"], body="hello")
 
     msg.attach(
@@ -310,7 +319,7 @@ def test_plain_message_with_ascii_converted_attachment(app, mail):
     )
 
 
-def test_html_message(app, mail):
+def test_html_message(app: Flask, mail: Mail) -> None:
     html_text = "<p>Hello World</p>"
     msg = Message(
         sender="from@example.com",
@@ -323,7 +332,7 @@ def test_html_message(app, mail):
     assert "Content-Type: multipart/alternative" in msg.as_string()
 
 
-def test_json_message(app, mail):
+def test_json_message(app: Flask, mail: Mail) -> None:
     json_text = '{"msg": "Hello World!}'
     msg = Message(
         sender="from@example.com",
@@ -336,7 +345,7 @@ def test_json_message(app, mail):
     assert "Content-Type: multipart/alternative" in msg.as_string()
 
 
-def test_html_message_with_attachments(app, mail):
+def test_html_message_with_attachments(app: Flask, mail: Mail) -> None:
     html_text = "<p>Hello World</p>"
     plain_text = "Hello World"
     msg = Message(
@@ -354,16 +363,26 @@ def test_html_message_with_attachments(app, mail):
     parsed = email.message_from_string(msg.as_string())
     assert len(parsed.get_payload()) == 2
 
-    body, attachment = parsed.get_payload()
+    payload = parsed.get_payload()
+    assert isinstance(payload, list)
+    body, attachment = payload
+    assert isinstance(body, email.message.Message)
+    assert isinstance(attachment, email.message.Message)
     assert len(body.get_payload()) == 2
 
-    plain, html = body.get_payload()
+    payload = body.get_payload()
+    assert isinstance(payload, list)
+    plain, html = payload
+    assert isinstance(plain, email.message.Message)
+    assert isinstance(html, email.message.Message)
     assert plain.get_payload() == plain_text
     assert html.get_payload() == html_text
-    assert base64.b64decode(attachment.get_payload()) == b"this is a test"
+    payload = attachment.get_payload()
+    assert isinstance(payload, str)
+    assert base64.b64decode(payload) == b"this is a test"
 
 
-def test_date_header(app, mail):
+def test_date_header(app: Flask, mail: Mail) -> None:
     before = time.time()
     msg = Message(
         sender="from@example.com",
@@ -374,12 +393,13 @@ def test_date_header(app, mail):
     )
     after = time.time()
 
+    assert msg.date is not None
     assert before <= msg.date <= after
-    dateFormatted = email.utils.formatdate(msg.date, localtime=True)
-    assert "Date: " + dateFormatted in msg.as_string()
+    formatted = email.utils.formatdate(msg.date, localtime=True)
+    assert "Date: " + formatted in msg.as_string()
 
 
-def test_msgid_header(app, mail):
+def test_msgid_header(app: Flask, mail: Mail) -> None:
     msg = Message(
         sender="from@example.com",
         subject="subject",
@@ -393,7 +413,7 @@ def test_msgid_header(app, mail):
     assert "Message-ID: " + msg.msgId in msg.as_string()
 
 
-def test_unicode_sender_tuple(app, mail):
+def test_unicode_sender_tuple(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="subject",
         sender=("ÄÜÖ → ✓", "from@example.com>"),
@@ -405,7 +425,7 @@ def test_unicode_sender_tuple(app, mail):
     )
 
 
-def test_unicode_sender(app, mail):
+def test_unicode_sender(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="subject",
         sender="ÄÜÖ → ✓ <from@example.com>>",
@@ -417,7 +437,7 @@ def test_unicode_sender(app, mail):
     )
 
 
-def test_unicode_headers(app, mail):
+def test_unicode_headers(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="subject",
         sender="ÄÜÖ → ✓ <from@example.com>",
@@ -443,16 +463,16 @@ def test_unicode_headers(app, mail):
     assert h3.encode() in response
 
 
-def test_unicode_subject(app, mail):
+def test_unicode_subject(app: Flask, mail: Mail) -> None:
     msg = Message(
-        subject=make_lazy_string(lambda a: a, "sübject"),
+        subject="sübject",
         sender="from@example.com",
         recipients=["to@example.com"],
     )
     assert "=?utf-8?q?s=C3=BCbject?=" in msg.as_string()
 
 
-def test_extra_headers(app, mail):
+def test_extra_headers(app: Flask, mail: Mail) -> None:
     msg = Message(
         sender="from@example.com",
         subject="subject",
@@ -463,7 +483,7 @@ def test_extra_headers(app, mail):
     assert "X-Extra-Header: Yes" in msg.as_string()
 
 
-def test_message_charset(app, mail):
+def test_message_charset(app: Flask, mail: Mail) -> None:
     msg = Message(
         sender="from@example.com",
         subject="subject",
@@ -568,7 +588,7 @@ def test_message_charset(app, mail):
     assert 'Content-Type: text/plain; charset="utf-8"' in msg.as_string()
 
 
-def test_empty_subject_header(app, mail):
+def test_empty_subject_header(app: Flask, mail: Mail) -> None:
     msg = Message(sender="from@example.com", recipients=["foo@bar.com"])
     msg.body = "normal ascii text"
     mail.send(msg)
