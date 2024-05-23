@@ -1,18 +1,24 @@
 # Flask-Mail
 
-Flask-Mail is an extension for Flask that makes it easy to send emails from your Flask application. It simplifies the process of integrating email functionality, allowing you to focus on building great features for your application.
+Flask-Mail is an extension for [Flask] that makes it easy to send emails from
+your application. It simplifies the process of integrating email functionality,
+allowing you to focus on building great features for your application.
 
-## Installation
+[flask]: https://flask.palletsprojects.com
 
-You can install Flask-Mail using pip:
 
-```bash
-pip install Flask-Mail
-```
+## Pallets Community Ecosystem
 
-## Usage
+> [!IMPORTANT]\
+> This project is part of the Pallets Community Ecosystem. Pallets is the open
+> source organization that maintains Flask; Pallets-Eco enables community
+> maintenance of related projects. If you are interested in helping maintain
+> this project, please reach out on [the Pallets Discord server][discord].
 
-To use Flask-Mail in your Flask application, you need to import and configure it. Here's a simple example:
+[discord]: https://discord.gg/pallets
+
+
+## A Simple Example
 
 ```python
 from flask import Flask
@@ -39,13 +45,3 @@ def send_email():
   mail.send(msg)
   return 'Email sent succesfully!'
 ```
-
-Make sure to replace placeholder values in the configuration with your actual email server details.
-
-## Documentation
-
-For more detailed information and advanced usage, please refer to the official [Flask-Mail documentation](https://pythonhosted.org/Flask-Mail/).
-
-## Contributing
-
-If you encounter any issues or have suggestions for improvements, feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/pallets-eco/flask-mail).
