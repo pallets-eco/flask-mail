@@ -1,13 +1,3 @@
-"""
-flaskext.mail
-~~~~~~~~~~~~~
-
-Flask extension for sending email.
-
-:copyright: (c) 2010 by Dan Jacob.
-:license: BSD, see LICENSE for more details.
-"""
-
 __version__ = "0.9.1"
 
 import re

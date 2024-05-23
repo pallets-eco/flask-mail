@@ -19,7 +19,7 @@ dependencies = [
     "flask",
     "blinker",
 ]
-license = { file = "LICENSE" }
+license = { file = "LICENSE.txt" }
 requires-python = ">=3.8"
 
 [project.urls]
