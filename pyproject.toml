@@ -3,24 +3,20 @@ name = "Flask-Mail"
 version = "0.9.1"
 description = "Flask extension for sending email"
 readme = "README.md"
+license = { file = "LICENSE.txt" }
 authors = [{ name = "Dan Jacob" }]
 maintainers = [{ name = "Pallets Ecosystem", email = "contact@palletsprojects.com" }]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Environment :: Web Environment",
-    "Intended Audience :: Developers",
+    "Framework :: Flask",
     "License :: OSI Approved :: BSD License",
-    "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
-    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+requires-python = ">=3.8"
 dependencies = [
     "flask",
     "blinker",
 ]
-license = { file = "LICENSE.txt" }
-requires-python = ">=3.8"
 
 [project.urls]
 Documentation = "https://flask-mail.readthedocs.io"
@@ -39,6 +35,31 @@ name = "flask_mail"
 testpaths = ["tests"]
 filterwarnings = ["error"]
 
+[tool.coverage.run]
+branch = true
+source = ["flask_mail", "tests"]
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
+[tool.mypy]
+python_version = "3.8"
+files = ["src/flask_mail", "tests"]
+show_error_codes = true
+pretty = true
+strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sqlparse.*"
+]
+ignore_missing_imports = true
+
+[tool.pyright]
+pythonVersion = "3.8"
+include = ["src/flask_mail", "tests"]
+typeCheckingMode = "basic"
+
 [tool.ruff]
 src = ["src"]
 fix = true
@@ -51,7 +72,7 @@ select = [
     "E",  # pycodestyle error
     "F",  # pyflakes
     "I",  # isort
-    "UP", # pyupgrade
+    "UP",  # pyupgrade
     "W",  # pycodestyle warning
 ]
 ignore-init-module-imports = true
