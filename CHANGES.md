@@ -1,3 +1,13 @@
+## Version 0.10.0
+
+Unreleased
+
+-   Drop support for Python < 3.8.
+-   Use `pyproject.toml` for packaging metadata.
+-   Use `flit_core` as build backend.
+-   Apply code formatting and linting tools.
+
+
 ## Version 0.9.1
 
 Released 2014-09-28
