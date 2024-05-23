@@ -1,6 +1,6 @@
 ## Version 0.10.0
 
-Unreleased
+Released 2024-05-23
 
 -   Drop support for Python < 3.8.
 -   Use `pyproject.toml` for packaging metadata.
