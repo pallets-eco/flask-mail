@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+import collections.abc as c
 import re
 import smtplib
 import time
+import typing as t
 import unicodedata
 import warnings
 from contextlib import contextmanager
@@ -15,24 +19,30 @@ from email.utils import formataddr
 from email.utils import formatdate
 from email.utils import make_msgid
 from email.utils import parseaddr
+from mimetypes import guess_type
+from types import TracebackType
 
 import blinker
 from flask import current_app
+from flask import Flask
+
+if t.TYPE_CHECKING:
+    import typing_extensions as te
 
 charset.add_charset("utf-8", charset.SHORTEST, None, "utf-8")
 
 
 class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
-    def __init__(self, obj, *args):
+    def __init__(self, obj: t.Any, *args: t.Any) -> None:
         self.obj = obj
-        UnicodeDecodeError.__init__(self, *args)
+        super().__init__(*args)
 
-    def __str__(self):
-        original = UnicodeDecodeError.__str__(self)
+    def __str__(self) -> str:
+        original = super().__str__()
         return f"{original}. You passed in {self.obj!r} ({type(self.obj)})"
 
 
-def force_text(s, encoding="utf-8", errors="strict"):
+def force_text(s: t.Any, encoding: str = "utf-8", errors: str = "strict") -> str:
     """
     Similar to smart_text, except that lazy instances are resolved to
     strings, rather than kept as lazy objects.
@@ -41,21 +51,20 @@ def force_text(s, encoding="utf-8", errors="strict"):
         return s
 
     try:
-        if isinstance(s, str):
-            return s
-        elif isinstance(s, bytes):
-            s = str(s, encoding, errors)
+        if isinstance(s, bytes):
+            out = str(s, encoding, errors)
         else:
-            s = str(s)
+            out = str(s)
     except UnicodeDecodeError as e:
         if not isinstance(s, Exception):
             raise FlaskMailUnicodeDecodeError(s, *e.args) from e
-        else:
-            s = " ".join([force_text(arg, encoding, errors) for arg in s])
-    return s
+
+        out = " ".join([force_text(arg, encoding, errors) for arg in s.args])
+
+    return out
 
 
-def sanitize_subject(subject, encoding="utf-8"):
+def sanitize_subject(subject: str, encoding: str = "utf-8") -> str:
     try:
         subject.encode("ascii")
     except UnicodeEncodeError:
@@ -63,18 +72,21 @@ def sanitize_subject(subject, encoding="utf-8"):
             subject = Header(subject, encoding).encode()
         except UnicodeEncodeError:
             subject = Header(subject, "utf-8").encode()
+
     return subject
 
 
-def sanitize_address(addr, encoding="utf-8"):
+def sanitize_address(addr: str | tuple[str, str], encoding: str = "utf-8") -> str:
     if isinstance(addr, str):
         addr = parseaddr(force_text(addr))
+
     nm, addr = addr
 
     try:
         nm = Header(nm, encoding).encode()
     except UnicodeEncodeError:
         nm = Header(nm, "utf-8").encode()
+
     try:
         addr.encode("ascii")
     except UnicodeEncodeError:  # IDN
@@ -85,41 +97,47 @@ def sanitize_address(addr, encoding="utf-8"):
             addr = "@".join([localpart, domain])
         else:
             addr = Header(addr, encoding).encode()
+
     return formataddr((nm, addr))
 
 
-def sanitize_addresses(addresses, encoding="utf-8"):
-    return map(lambda e: sanitize_address(e, encoding), addresses)
+def sanitize_addresses(
+    addresses: c.Iterable[str | tuple[str, str]], encoding: str = "utf-8"
+) -> list[str]:
+    return [sanitize_address(e, encoding) for e in addresses]
 
 
-def _has_newline(line):
+def _has_newline(line: str) -> bool:
     """Used by has_bad_header to check for \\r or \\n"""
-    if line and ("\r" in line or "\n" in line):
-        return True
-    return False
+    return "\n" in line or "\r" in line
 
 
 class Connection:
     """Handles connection to host."""
 
-    def __init__(self, mail):
+    def __init__(self, mail: Mail) -> None:
         self.mail = mail
+        self.host: smtplib.SMTP | smtplib.SMTP_SSL | None = None
+        self.num_emails: int = 0
 
-    def __enter__(self):
+    def __enter__(self) -> te.Self:
         if self.mail.suppress:
             self.host = None
         else:
             self.host = self.configure_host()
 
         self.num_emails = 0
-
         return self
 
-    def __exit__(self, exc_type, exc_value, tb):
-        if self.host:
+    def __exit__(
+        self, exc_type: type[BaseException], exc_value: BaseException, tb: TracebackType
+    ) -> None:
+        if self.host is not None:
             self.host.quit()
 
-    def configure_host(self):
+    def configure_host(self) -> smtplib.SMTP | smtplib.SMTP_SSL:
+        host: smtplib.SMTP | smtplib.SMTP_SSL
+
         if self.mail.use_ssl:
             host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
         else:
@@ -129,19 +147,21 @@ class Connection:
 
         if self.mail.use_tls:
             host.starttls()
+
         if self.mail.username and self.mail.password:
             host.login(self.mail.username, self.mail.password)
 
         return host
 
-    def send(self, message, envelope_from=None):
+    def send(
+        self, message: Message, envelope_from: str | tuple[str, str] | None = None
+    ) -> None:
         """Verifies and sends message.
 
         :param message: Message instance.
         :param envelope_from: Email address to be used in MAIL FROM command.
         """
         assert message.send_to, "No recipients have been added"
-
         assert message.sender, (
             "The message does not specify a sender and a default sender "
             "has not been configured"
@@ -153,7 +173,7 @@ class Connection:
         if message.date is None:
             message.date = time.time()
 
-        if self.host:
+        if self.host is not None:
             self.host.sendmail(
                 sanitize_address(envelope_from or message.sender),
                 list(sanitize_addresses(message.send_to)),
@@ -162,24 +182,24 @@ class Connection:
                 message.rcpt_options,
             )
 
-        email_dispatched.send(current_app._get_current_object(), message=message)
-
+        app = current_app._get_current_object()  # type: ignore[attr-defined]
+        email_dispatched.send(app, message=message)
         self.num_emails += 1
 
         if self.num_emails == self.mail.max_emails:
             self.num_emails = 0
+
             if self.host:
                 self.host.quit()
                 self.host = self.configure_host()
 
-    def send_message(self, *args, **kwargs):
+    def send_message(self, *args: t.Any, **kwargs: t.Any) -> None:
         """Shortcut for send(msg).
 
         Takes same arguments as Message constructor.
 
         :versionadded: 0.3.5
         """
-
         self.send(Message(*args, **kwargs))
 
 
@@ -190,27 +210,47 @@ class BadHeaderError(Exception):
 class Attachment:
     """Encapsulates file attachment information.
 
-    :versionadded: 0.3.5
-
     :param filename: filename of attachment
     :param content_type: file mimetype
     :param data: the raw file data
     :param disposition: content-disposition (if any)
+
+    .. versionchanged:: 0.10.0
+        The `data` argument is required.
+
+    .. versionadded: 0.3.5
     """
 
     def __init__(
         self,
-        filename=None,
-        content_type=None,
-        data=None,
-        disposition=None,
-        headers=None,
+        filename: str | None = None,
+        content_type: str | None = None,
+        data: str | bytes | None = None,
+        disposition: str | None = None,
+        headers: dict[str, str] | None = None,
     ):
-        self.filename = filename
-        self.content_type = content_type
-        self.data = data
-        self.disposition = disposition or "attachment"
-        self.headers = headers or {}
+        if data is None:
+            raise ValueError("The 'data' argument is required.")
+
+        self.data: str | bytes = data
+
+        if content_type is None and filename is not None:
+            content_type = guess_type(filename)[0]
+
+        if content_type is None:
+            if isinstance(data, str):
+                content_type = "text/plain"
+            else:
+                content_type = "application/octet-stream"
+
+        self.filename: str | None = filename
+        self.content_type: str = content_type
+        self.disposition: str = disposition or "attachment"
+
+        if headers is None:
+            headers = {}
+
+        self.headers: dict[str, str] = headers
 
 
 class Message:
@@ -236,72 +276,80 @@ class Message:
 
     def __init__(
         self,
-        subject="",
-        recipients=None,
-        body=None,
-        html=None,
-        alts=None,
-        sender=None,
-        cc=None,
-        bcc=None,
-        attachments=None,
-        reply_to=None,
-        date=None,
-        charset=None,
-        extra_headers=None,
-        mail_options=None,
-        rcpt_options=None,
+        subject: str = "",
+        recipients: list[str | tuple[str, str]] | None = None,
+        body: str | None = None,
+        html: str | None = None,
+        alts: dict[str, str] | c.Iterable[tuple[str, str]] | None = None,
+        sender: str | tuple[str, str] | None = None,
+        cc: list[str | tuple[str, str]] | None = None,
+        bcc: list[str | tuple[str, str]] | None = None,
+        attachments: list[Attachment] | None = None,
+        reply_to: str | tuple[str, str] | None = None,
+        date: float | None = None,
+        charset: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+        mail_options: list[str] | None = None,
+        rcpt_options: list[str] | None = None,
     ):
         sender = sender or current_app.extensions["mail"].default_sender
 
         if isinstance(sender, tuple):
-            sender = "{} <{}>".format(*sender)
+            sender = f"{sender[0]} <{sender[1]}>"
 
-        self.recipients = recipients or []
-        self.subject = subject
-        self.sender = sender
-        self.reply_to = reply_to
-        self.cc = cc or []
-        self.bcc = bcc or []
-        self.body = body
-        self.alts = dict(alts or {})
-        self.html = html
-        self.date = date
-        self.msgId = make_msgid()
-        self.charset = charset
-        self.extra_headers = extra_headers
-        self.mail_options = mail_options or []
-        self.rcpt_options = rcpt_options or []
-        self.attachments = attachments or []
-
-    @property
-    def send_to(self):
-        return set(self.recipients) | set(self.bcc or ()) | set(self.cc or ())
+        self.recipients: list[str | tuple[str, str]] = recipients or []
+        self.subject: str = subject
+        self.sender: str | tuple[str, str] = sender  # pyright: ignore
+        self.reply_to: str | tuple[str, str] | None = reply_to
+        self.cc: list[str | tuple[str, str]] = cc or []
+        self.bcc: list[str | tuple[str, str]] = bcc or []
+        self.body: str | None = body
+        self.alts: dict[str, str] = dict(alts or {})
+        self.html: str | None = html
+        self.date: float | None = date
+        self.msgId: str = make_msgid()
+        self.charset: str | None = charset
+        self.extra_headers: dict[str, str] | None = extra_headers
+        self.mail_options: list[str] = mail_options or []
+        self.rcpt_options: list[str] = rcpt_options or []
+        self.attachments: list[Attachment] = attachments or []
 
     @property
-    def html(self):
+    def send_to(self) -> set[str | tuple[str, str]]:
+        out = set(self.recipients)
+
+        if self.bcc:
+            out.update(self.bcc)
+
+        if self.cc:
+            out.update(self.cc)
+
+        return out
+
+    @property
+    def html(self) -> str | None:  # pyright: ignore
         return self.alts.get("html")
 
     @html.setter
-    def html(self, value):
+    def html(self, value: str | None) -> None:  # pyright: ignore
         if value is None:
             self.alts.pop("html", None)
         else:
             self.alts["html"] = value
 
-    def _mimetext(self, text, subtype="plain"):
+    def _mimetext(self, text: str | None, subtype: str = "plain") -> MIMEText:
         """Creates a MIMEText object with the given subtype (default: 'plain')
         If the text is unicode, the utf-8 charset is used.
         """
         charset = self.charset or "utf-8"
-        return MIMEText(text, _subtype=subtype, _charset=charset)
+        return MIMEText(text, _subtype=subtype, _charset=charset)  # type: ignore[arg-type]
 
-    def _message(self):
+    def _message(self) -> MIMEBase:
         """Creates the email"""
         ascii_attachments = current_app.extensions["mail"].ascii_attachments
         encoding = self.charset or "utf-8"
-
         attachments = self.attachments or []
+        msg: MIMEBase
 
         if len(attachments) == 0 and not self.alts:
             # No html content and zero attachments means plain text
@@ -315,8 +363,10 @@ class Message:
             msg = MIMEMultipart()
             alternative = MIMEMultipart("alternative")
             alternative.attach(self._mimetext(self.body, "plain"))
+
             for mimetype, content in self.alts.items():
                 alternative.attach(self._mimetext(content, mimetype))
+
             msg.attach(alternative)
 
         if self.subject:
@@ -324,7 +374,6 @@ class Message:
 
         msg["From"] = sanitize_address(self.sender, encoding)
         msg["To"] = ", ".join(list(set(sanitize_addresses(self.recipients, encoding))))
-
         msg["Date"] = formatdate(self.date, localtime=True)
         # see RFC 5322 section 3.6.4.
         msg["Message-ID"] = self.msgId
@@ -340,54 +389,67 @@ class Message:
                 msg[k] = v
 
         SPACES = re.compile(r"[\s]+", re.UNICODE)
+
         for attachment in attachments:
             f = MIMEBase(*attachment.content_type.split("/"))
             f.set_payload(attachment.data)
             encode_base64(f)
 
-            filename = attachment.filename
-            if filename and ascii_attachments:
-                # force filename to ascii
-                filename = unicodedata.normalize("NFKD", filename)
-                filename = filename.encode("ascii", "ignore").decode("ascii")
-                filename = SPACES.sub(" ", filename).strip()
+            if attachment.filename is not None:
+                filename = attachment.filename
 
-            try:
-                filename and filename.encode("ascii")
-            except UnicodeEncodeError:
-                filename = ("UTF8", "", filename)
+                if ascii_attachments:
+                    # force filename to ascii
+                    filename = unicodedata.normalize("NFKD", attachment.filename)
+                    filename = filename.encode("ascii", "ignore").decode("ascii")
+                    filename = SPACES.sub(" ", filename).strip()
 
-            f.add_header(
-                "Content-Disposition", attachment.disposition, filename=filename
-            )
+                try:
+                    filename.encode("ascii")
+                except UnicodeEncodeError:
+                    f.add_header(
+                        "Content-Disposition",
+                        attachment.disposition,
+                        filename=("UTF8", "", filename),
+                    )
+                else:
+                    f.add_header(
+                        "Content-Disposition", attachment.disposition, filename=filename
+                    )
 
             for key, value in attachment.headers.items():
                 f.add_header(key, value)
 
             msg.attach(f)
-        msg.policy = policy.SMTP
 
+        msg.policy = policy.SMTP
         return msg
 
-    def as_string(self):
+    def as_string(self) -> str:
         return self._message().as_string()
 
-    def as_bytes(self):
+    def as_bytes(self) -> bytes:
         return self._message().as_bytes()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.as_string()
 
-    def __bytes__(self):
+    def __bytes__(self) -> bytes:
         return self.as_bytes()
 
-    def has_bad_headers(self):
+    def has_bad_headers(self) -> bool:
         """Checks for bad headers i.e. newlines in subject, sender or recipients.
         RFC5322: Allows multiline CRLF with trailing whitespace (FWS) in headers
         """
+        headers = [self.sender, *self.recipients]
 
-        headers = [self.sender, self.reply_to] + self.recipients
+        if self.reply_to:
+            headers.append(self.reply_to)
+
         for header in headers:
+            if isinstance(header, tuple):
+                header = f"{header[0]} <{header[1]}>"
+
             if _has_newline(header):
                 return True
 
@@ -402,9 +464,10 @@ class Message:
                         return True
                     if len(line.strip()) == 0:
                         return True
+
         return False
 
-    def is_bad_headers(self):
+    def is_bad_headers(self) -> bool:
         warnings.warn(
             "'is_bad_headers' is renamed to 'has_bad_headers'. The old name is"
             " deprecated and will be removed in Flask-Mail 1.0.",
@@ -413,12 +476,12 @@ class Message:
         )
         return self.has_bad_headers()
 
-    def send(self, connection):
+    def send(self, connection: Connection) -> None:
         """Verifies and sends the message."""
 
         connection.send(self)
 
-    def add_recipient(self, recipient):
+    def add_recipient(self, recipient: str | tuple[str, str]) -> None:
         """Adds another recipient to the message.
 
         :param recipient: email address of recipient.
@@ -428,12 +491,12 @@ class Message:
 
     def attach(
         self,
-        filename=None,
-        content_type=None,
-        data=None,
-        disposition=None,
-        headers=None,
-    ):
+        filename: str | None = None,
+        content_type: str | None = None,
+        data: str | bytes | None = None,
+        disposition: str | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         """Adds an attachment to the message.
 
         :param filename: filename of attachment
@@ -448,7 +511,7 @@ class Message:
 
 class _MailMixin:
     @contextmanager
-    def record_messages(self):
+    def record_messages(self) -> c.Iterator[list[Message]]:
         """Records all messages. Use in unit tests for example::
 
             with mail.record_messages() as outbox:
@@ -460,13 +523,13 @@ class _MailMixin:
         """
         outbox = []
 
-        def record(app, message):
+        def record(app: Flask, message: Message) -> None:
             outbox.append(message)
 
         with email_dispatched.connected_to(record):
             yield outbox
 
-    def send(self, message):
+    def send(self, message: Message) -> None:
         """Sends a single message instance. If TESTING is True the message will
         not actually be sent.
 
@@ -476,7 +539,7 @@ class _MailMixin:
         with self.connect() as connection:
             message.send(connection)
 
-    def send_message(self, *args, **kwargs):
+    def send_message(self, *args: t.Any, **kwargs: t.Any) -> None:
         """Shortcut for send(msg).
 
         Takes same arguments as Message constructor.
@@ -486,9 +549,10 @@ class _MailMixin:
 
         self.send(Message(*args, **kwargs))
 
-    def connect(self):
+    def connect(self) -> Connection:
         """Opens a connection to the mail host."""
         app = getattr(self, "app", None) or current_app
+
         try:
             return Connection(app.extensions["mail"])
         except KeyError as err:
@@ -500,17 +564,17 @@ class _MailMixin:
 class _Mail(_MailMixin):
     def __init__(
         self,
-        server,
-        username,
-        password,
-        port,
-        use_tls,
-        use_ssl,
-        default_sender,
-        debug,
-        max_emails,
-        suppress,
-        ascii_attachments=False,
+        server: str,
+        username: str | None,
+        password: str | None,
+        port: int | None,
+        use_tls: bool,
+        use_ssl: bool,
+        default_sender: str | None,
+        debug: int,
+        max_emails: int | None,
+        suppress: bool,
+        ascii_attachments: bool,
     ):
         self.server = server
         self.username = username
@@ -526,19 +590,19 @@ class _Mail(_MailMixin):
 
 
 class Mail(_MailMixin):
-    """Manages email messaging
+    """Manages email messaging."""
 
-    :param app: Flask instance
-    """
-
-    def __init__(self, app=None):
+    def __init__(self, app: Flask | None = None) -> None:
         self.app = app
+
         if app is not None:
-            self.state = self.init_app(app)
+            self.state: _Mail | None = self.init_app(app)
         else:
             self.state = None
 
-    def init_mail(self, config, debug=False, testing=False):
+    def init_mail(
+        self, config: dict[str, t.Any], debug: bool | int = False, testing: bool = False
+    ) -> _Mail:
         return _Mail(
             config.get("MAIL_SERVER", "127.0.0.1"),
             config.get("MAIL_USERNAME"),
@@ -553,13 +617,11 @@ class Mail(_MailMixin):
             config.get("MAIL_ASCII_ATTACHMENTS", False),
         )
 
-    def init_app(self, app):
+    def init_app(self, app: Flask) -> _Mail:
         """Initializes your mail settings from the application settings.
 
         You can use this if you want to set up your Mail instance
         at configuration time.
-
-        :param app: Flask application instance
         """
         state = self.init_mail(app.config, app.debug, app.testing)
 
@@ -568,13 +630,12 @@ class Mail(_MailMixin):
         app.extensions["mail"] = state
         return state
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> t.Any:
         return getattr(self.state, name, None)
 
 
-signals = blinker.Namespace()
-
-email_dispatched = signals.signal(
+signals: blinker.Namespace = blinker.Namespace()
+email_dispatched: blinker.NamedSignal = signals.signal(
     "email-dispatched",
     doc="""
 Signal sent when an email is dispatched. This signal will also be sent
@@ -583,7 +644,7 @@ in testing mode, even though the email will not actually be sent.
 )
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> t.Any:
     if name == "__version__":
         import importlib.metadata
 

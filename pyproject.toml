@@ -11,6 +11,7 @@ classifiers = [
     "Framework :: Flask",
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.8"
 dependencies = [
@@ -75,7 +76,6 @@ select = [
     "UP",  # pyupgrade
     "W",  # pycodestyle warning
 ]
-ignore-init-module-imports = true
 
 [tool.ruff.lint.isort]
 force-single-line = true

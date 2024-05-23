@@ -1,7 +1,12 @@
+from __future__ import annotations
+
+from flask import Flask
+
+from flask_mail import Mail
 from flask_mail import Message
 
 
-def test_send(app, mail):
+def test_send(app: Flask, mail: Mail) -> None:
     with mail.record_messages() as outbox:
         msg = Message(subject="testing", recipients=["tester@example.com"], body="test")
         mail.send(msg)
@@ -10,7 +15,7 @@ def test_send(app, mail):
         assert msg.sender == app.extensions["mail"].default_sender
 
 
-def test_send_message(app, mail):
+def test_send_message(app: Flask, mail: Mail) -> None:
     with mail.record_messages() as outbox:
         mail.send_message(
             subject="testing", recipients=["tester@example.com"], body="test"
