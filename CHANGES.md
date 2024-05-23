@@ -8,6 +8,8 @@ Unreleased
 -   Apply code formatting and linting tools.
 -   Deprecate the `__version__` attribute. Use feature detection or
     `importlib.metadata.version("flask-mail")` instead.
+-   Indicate that the deprecated `is_bad_headers` will be removed in the next
+    version.
 
 
 ## Version 0.9.1

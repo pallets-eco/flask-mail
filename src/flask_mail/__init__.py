@@ -405,12 +405,12 @@ class Message:
         return False
 
     def is_bad_headers(self):
-        from warnings import warn
-
-        msg = (
-            "is_bad_headers is deprecated, use the new has_bad_headers method instead."
+        warnings.warn(
+            "'is_bad_headers' is renamed to 'has_bad_headers'. The old name is"
+            " deprecated and will be removed in Flask-Mail 1.0.",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        warn(DeprecationWarning(msg), stacklevel=1)
         return self.has_bad_headers()
 
     def send(self, connection):
