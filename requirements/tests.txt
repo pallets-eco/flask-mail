@@ -8,8 +8,6 @@ exceptiongroup==1.2.1
     # via pytest
 iniconfig==2.0.0
     # via pytest
-mock==5.1.0
-    # via -r tests.in
 packaging==24.0
     # via pytest
 pluggy==1.5.0

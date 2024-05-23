@@ -52,7 +52,7 @@ pytz==2024.1
     # via babel
 pyyaml==6.0.1
     # via myst-parser
-requests==2.32.1
+requests==2.32.2
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
