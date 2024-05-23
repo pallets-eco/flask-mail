@@ -6,6 +6,8 @@ Unreleased
 -   Use `pyproject.toml` for packaging metadata.
 -   Use `flit_core` as build backend.
 -   Apply code formatting and linting tools.
+-   Deprecate the `__version__` attribute. Use feature detection or
+    `importlib.metadata.version("flask-mail")` instead.
 
 
 ## Version 0.9.1

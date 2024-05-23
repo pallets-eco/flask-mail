@@ -1,9 +1,8 @@
-__version__ = "0.10.0.dev"
-
 import re
 import smtplib
 import time
 import unicodedata
+import warnings
 from contextlib import contextmanager
 from email import charset
 from email import policy
@@ -591,3 +590,19 @@ Signal sent when an email is dispatched. This signal will also be sent
 in testing mode, even though the email will not actually be sent.
 """,
 )
+
+
+def __getattr__(name):
+    if name == "__version__":
+        import importlib.metadata
+
+        warnings.warn(
+            "The '__version__' attribute is deprecated and will be removed in"
+            " Flask-Mail 1.0. Use feature detection or"
+            " 'importlib.metadata.version(\"flask-mail\")' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return importlib.metadata.version("flask-mail")
+
+    raise AttributeError(name)
