@@ -18,7 +18,7 @@ docutils==0.20.1
     # via
     #   myst-parser
     #   sphinx
-furo==2024.5.6
+furo==2024.7.18
     # via -r docs.in
 idna==3.7
     # via requests

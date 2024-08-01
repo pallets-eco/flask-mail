@@ -30,7 +30,7 @@ iniconfig==2.0.0
     #   -r tests.txt
     #   -r typing.txt
     #   pytest
-mypy==1.10.0
+mypy==1.11.1
     # via -r typing.txt
 mypy-extensions==1.0.0
     # via
@@ -62,9 +62,9 @@ pre-commit==3.5.0
     # via -r dev.in
 pyproject-api==1.6.1
     # via tox
-pyright==1.1.365
+pyright==1.1.374
     # via -r typing.txt
-pytest==8.2.1
+pytest==8.3.2
     # via
     #   -r tests.txt
     #   -r typing.txt
@@ -78,7 +78,7 @@ tomli==2.0.1
     #   pyproject-api
     #   pytest
     #   tox
-tox==4.15.0
+tox==4.15.1
     # via -r dev.in
 typing-extensions==4.11.0
     # via
