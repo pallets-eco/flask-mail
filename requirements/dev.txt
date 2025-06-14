@@ -71,7 +71,7 @@ typing-extensions==4.12.2
     # via
     #   -r typing.txt
     #   mypy
-virtualenv==20.26.3
+virtualenv==20.26.6
     # via
     #   pre-commit
     #   tox
