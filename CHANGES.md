@@ -16,6 +16,10 @@ Released 2024-05-23
 -   `Attachment.data` may not be `None`.
 -   `Attachment.content_type` will be detected based on `filename` and `data`
     and will not be `None`.
+-   `Attachment.headers` must now be a `dict[str, str]`. Previously the
+    implementation iterated the attribute as `for key, value in headers`, which
+    accidentally accepted a sequence of `(key, value)` 2-tuples. Pass a dict
+    such as `headers={"Content-ID": "<image1>"}`.
 
 
 ## Version 0.9.1
