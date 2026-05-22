@@ -416,7 +416,7 @@ def test_msgid_header(app: Flask, mail: Mail) -> None:
 def test_unicode_sender_tuple(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="subject",
-        sender=("ÄÜÖ → ✓", "from@example.com>"),
+        sender=("ÄÜÖ → ✓", "from@example.com"),
         recipients=["to@example.com"],
     )
 
@@ -428,7 +428,7 @@ def test_unicode_sender_tuple(app: Flask, mail: Mail) -> None:
 def test_unicode_sender(app: Flask, mail: Mail) -> None:
     msg = Message(
         subject="subject",
-        sender="ÄÜÖ → ✓ <from@example.com>>",
+        sender="ÄÜÖ → ✓ <from@example.com>",
         recipients=["to@example.com"],
     )
 
