@@ -277,32 +277,37 @@ class Message:
     def __init__(
         self,
         subject: str = "",
-        recipients: list[str | tuple[str, str]] | None = None,
+        recipients: c.Iterable[str | tuple[str, str]] | None = None,
         body: str | None = None,
         html: str | None = None,
         alts: dict[str, str] | c.Iterable[tuple[str, str]] | None = None,
         sender: str | tuple[str, str] | None = None,
-        cc: list[str | tuple[str, str]] | None = None,
-        bcc: list[str | tuple[str, str]] | None = None,
-        attachments: list[Attachment] | None = None,
+        cc: c.Iterable[str | tuple[str, str]] | None = None,
+        bcc: c.Iterable[str | tuple[str, str]] | None = None,
+        attachments: c.Iterable[Attachment] | None = None,
         reply_to: str | tuple[str, str] | None = None,
         date: float | None = None,
         charset: str | None = None,
         extra_headers: dict[str, str] | None = None,
-        mail_options: list[str] | None = None,
-        rcpt_options: list[str] | None = None,
+        mail_options: c.Iterable[str] | None = None,
+        rcpt_options: c.Iterable[str] | None = None,
     ):
         sender = sender or current_app.extensions["mail"].default_sender
 
         if isinstance(sender, tuple):
             sender = f"{sender[0]} <{sender[1]}>"
 
-        self.recipients: list[str | tuple[str, str]] = recipients or []
+        # Inputs are typed as Iterable so callers can pass e.g. ``list[str]``
+        # (mypy treats ``list`` as invariant, so ``list[str]`` is not a
+        # subtype of ``list[str | tuple[str, str]]``). The stored attributes
+        # are still ``list`` because ``add_recipient`` and ``attach`` mutate
+        # them with ``append``.
+        self.recipients: list[str | tuple[str, str]] = list(recipients or [])
         self.subject: str = subject
         self.sender: str | tuple[str, str] = sender  # pyright: ignore
         self.reply_to: str | tuple[str, str] | None = reply_to
-        self.cc: list[str | tuple[str, str]] = cc or []
-        self.bcc: list[str | tuple[str, str]] = bcc or []
+        self.cc: list[str | tuple[str, str]] = list(cc or [])
+        self.bcc: list[str | tuple[str, str]] = list(bcc or [])
         self.body: str | None = body
         self.alts: dict[str, str] = dict(alts or {})
         self.html: str | None = html
@@ -310,9 +315,9 @@ class Message:
         self.msgId: str = make_msgid()
         self.charset: str | None = charset
         self.extra_headers: dict[str, str] | None = extra_headers
-        self.mail_options: list[str] = mail_options or []
-        self.rcpt_options: list[str] = rcpt_options or []
-        self.attachments: list[Attachment] = attachments or []
+        self.mail_options: list[str] = list(mail_options or [])
+        self.rcpt_options: list[str] = list(rcpt_options or [])
+        self.attachments: list[Attachment] = list(attachments or [])
 
     @property
     def send_to(self) -> set[str | tuple[str, str]]:

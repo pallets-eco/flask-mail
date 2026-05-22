@@ -31,6 +31,26 @@ def test_init_message_recipients(app: Flask, mail: Mail) -> None:
     assert len(msg2.recipients) == 1
 
 
+def test_init_message_recipients_accept_iterables(app: Flask, mail: Mail) -> None:
+    # Inputs are typed as Iterable, so a plain ``list[str]`` (the README
+    # pattern) is accepted by mypy without an explicit cast. The constructor
+    # also coerces arbitrary iterables (generator, tuple, set) to a list so
+    # ``add_recipient`` keeps working with ``append``.
+    str_only: list[str] = ["a@example.com", "b@example.com"]
+    msg = Message(subject="subject", recipients=str_only)
+    assert msg.recipients == ["a@example.com", "b@example.com"]
+
+    tuple_only: list[tuple[str, str]] = [("Bob", "bob@example.com")]
+    msg = Message(subject="subject", recipients=tuple_only)
+    assert msg.recipients == [("Bob", "bob@example.com")]
+
+    # A generator is a one-shot Iterable but the stored attribute must still
+    # be a list (so add_recipient.append works afterwards).
+    msg = Message(subject="subject", recipients=(r for r in ["g@example.com"]))
+    msg.add_recipient("h@example.com")
+    assert msg.recipients == ["g@example.com", "h@example.com"]
+
+
 def test_esmtp_options_properly_initialized(app: Flask, mail: Mail) -> None:
     msg = Message(subject="subject")
     assert msg.mail_options == []
