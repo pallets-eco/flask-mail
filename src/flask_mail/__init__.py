@@ -78,7 +78,7 @@ def sanitize_subject(subject: str, encoding: str = "utf-8") -> str:
 
 def sanitize_address(addr: str | tuple[str, str], encoding: str = "utf-8") -> str:
     if isinstance(addr, str):
-        addr = parseaddr(force_text(addr))
+        addr = parseaddr(force_text(addr), strict=False)
 
     nm, addr = addr
 

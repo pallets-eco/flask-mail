@@ -13,10 +13,40 @@ classifiers = [
     "Programming Language :: Python",
     "Typing :: Typed",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "flask",
     "blinker",
+]
+
+[dependency-groups]
+build = [
+    "build",
+]
+dev = [
+    "pre-commit",
+    "tox",
+    "tox-uv",
+]
+docs = [
+    "furo",
+    "myst-parser",
+    "sphinx",
+    "sphinxcontrib-log-cabinet",
+]
+gha-update = [
+    "gha-update ; python_full_version > '3.12'",
+]
+pre-commit = [
+    "pre-commit",
+]
+tests = [
+    "pytest",
+]
+typing = [
+    "mypy",
+    "pyright",
+    "pytest",
 ]
 
 [project.urls]
@@ -44,7 +74,7 @@ source = ["flask_mail", "tests"]
 source = ["src", "*/site-packages"]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.12"
 files = ["src/flask_mail", "tests"]
 show_error_codes = true
 pretty = true
@@ -57,7 +87,7 @@ module = [
 ignore_missing_imports = true
 
 [tool.pyright]
-pythonVersion = "3.8"
+pythonVersion = "3.12"
 include = ["src/flask_mail", "tests"]
 typeCheckingMode = "basic"
 
@@ -80,6 +110,77 @@ select = [
 [tool.ruff.lint.isort]
 force-single-line = true
 order-by-type = false
+
+[tool.tox]
+envlist = [
+    "py3.12",
+    "py3.11",
+    "py3.10",
+    "py3.9",
+    "style",
+    "typing",
+    "docs",
+]
+
+[tool.tox.env_run_base]
+description = "pytest on latest dependency versions"
+runner = "uv-venv-lock-runner"
+package = "wheel"
+wheel_build_env = ".pkg"
+constrain_package_deps = true
+use_frozen_constraints = true
+dependency_groups = ["tests"]
+env_tmp_dir = "{toxworkdir}/tmp/{envname}"
+commands = [[
+    "pytest", "-v", "--capture=tee-sys", "--tb=short", "--basetemp={env_tmp_dir}",
+    {replace = "posargs", default = [], extend = true},
+]]
+
+[tool.tox.env.docs]
+description = "build docs"
+dependency_groups = ["docs"]
+commands = [["sphinx-build", "-E", "-W", "-b", "html", "docs", "docs/_build/"]]
+
+[tool.tox.env.style]
+description = "run all pre-commit hooks on all files"
+dependency_groups = ["pre-commit"]
+skip_install = true
+commands = [["pre-commit", "run", "--all-files"]]
+
+[tool.tox.env.typing]
+description = "run static type checkers"
+base_python = ["3.12"]
+dependency_groups = ["typing"]
+commands = [
+    ["mypy"],
+    ["pyright"],
+    ["pyright", "--ignoreexternal", "--verifytypes", "flask_mail"],
+]
+
+[tool.tox.env.update-actions]
+description = "update GitHub Actions pins"
+labels = ["update"]
+dependency_groups = ["gha-update"]
+skip_install = true
+commands = [["gha-update"]]
+
+[tool.tox.env.update-pre-commit]
+description = "update pre-commit pins"
+labels = ["update"]
+dependency_groups = ["pre-commit"]
+skip_install = true
+commands = [["pre-commit", "autoupdate", "--freeze", "-j4"]]
+
+[tool.tox.env.update-requirements]
+description = "update uv lock"
+labels = ["update"]
+dependency_groups = []
+no_default_groups = true
+skip_install = true
+commands = [["uv", "lock", {replace = "posargs", default = ["-U"], extend = true}]]
+
+[tool.uv]
+default-groups = ["dev", "docs", "tests", "typing"]
 
 [tool.gha-update]
 tag-only = [
