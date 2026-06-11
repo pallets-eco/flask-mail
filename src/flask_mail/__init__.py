@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections.abc as c
 import re
 import smtplib
+import ssl
 import time
 import typing as t
 import unicodedata
@@ -139,7 +140,7 @@ class Connection:
         host: smtplib.SMTP | smtplib.SMTP_SSL
 
         if self.mail.use_ssl:
-            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port)
+            host = smtplib.SMTP_SSL(self.mail.server, self.mail.port, context=ssl.create_default_context())
         else:
             host = smtplib.SMTP(self.mail.server, self.mail.port)
 
