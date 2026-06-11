@@ -358,6 +358,13 @@ class Message:
             # No html and at least one attachment means multipart
             msg = MIMEMultipart()
             msg.attach(self._mimetext(self.body))
+        elif len(attachments) == 0 and self.alts:
+            # Some alternative parts but no attachment means alternative
+            msg = MIMEMultipart("alternative")
+            msg.attach(self._mimetext(self.body, "plain"))
+
+            for mimetype, content in self.alts.items():
+                msg.attach(self._mimetext(content, mimetype))
         else:
             # Anything else
             msg = MIMEMultipart()
